@@ -1,66 +1,48 @@
 # API REST Tipo Facebook con Laravel
 
-## Objetivo del proyecto
+API REST académica para crear publicaciones con múltiples imágenes, agregar comentarios, dar Me gusta, consultar publicaciones y borrar una publicación con sus imágenes y comentarios.
 
-Desarrollar una API REST académica para crear y consultar publicaciones con imágenes, comentarios y "Me gusta", y permitir eliminar publicaciones junto con sus imágenes.
+## Objetivo
+
+Practicar el desarrollo de una API REST con Laravel 11, arquitectura MVC, Eloquent ORM, validación con Form Requests, almacenamiento de archivos, pruebas y consumo desde Postman.
 
 ## Tecnologías
 
-- PHP 8.2 o superior
-- Laravel 11
-- Docker y Docker Compose
+- PHP 8.3 en Docker (Laravel 11 requiere PHP 8.2 o superior; no es compatible con PHP 8.1).
+- Laravel 11.57
 - SQLite
-- Postman, Git, GitHub y Visual Studio Code
+- Docker y Docker Compose
+- Postman y Newman
+- Git, GitHub y Visual Studio Code
 
-> Laravel 11 requiere PHP 8.2 o superior. Por ello, este requisito efectivo prevalece sobre la indicación general de PHP 8.1+.
->
-> Laravel 11 ya no está en su período de soporte y Composer informa avisos de seguridad para esta rama. Se conserva porque es un requisito académico; la instalación permite esos avisos explícitamente. No utilizar este proyecto en producción. Para una aplicación pública, se debe migrar a una versión de Laravel con soporte vigente.
+> **Aviso de soporte:** Laravel 11 ya no recibe soporte de seguridad y Composer publica avisos para esta versión. Se conserva por ser requisito académico. Esta aplicación es únicamente para uso local en el taller; no desplegar en producción. Para un sistema público, actualizar primero a una versión mantenida de Laravel.
 
-## Configuración del proyecto
+## Configuración
 
-La aplicación corre dentro de Docker; no es necesario instalar PHP ni Composer en el equipo.
+Docker ejecuta PHP y Composer; no es necesario instalarlos en el host.
 
 ```sh
 docker compose up --build -d
 docker compose exec app php artisan --version
+docker compose exec app php artisan migrate
 docker compose exec app php artisan test
 ```
 
-La API quedará accesible en <http://localhost:8000>. Para consultar los logs:
+Base URL local: <http://localhost:8000>.
+
+SQLite se guarda en `database/database.sqlite`. Compose crea el archivo si no existe y Laravel usa esa ruta de forma predeterminada. El archivo de base local se ignora en Git; se conservan los datos mientras no se borre del workspace. Las pruebas PHPUnit usan SQLite en memoria, por lo que no modifican esa base.
+
+Para inspeccionar el estado:
 
 ```sh
+docker compose exec app php artisan config:show database.default
+docker compose exec app php artisan migrate:status
 docker compose logs -f app
 ```
 
-La base de datos local es `database/database.sqlite`; Compose la crea si no existe. No se versiona el archivo SQLite: sus cambios se conservan en el workspace. Laravel utiliza SQLite como conexión predeterminada; sesiones y caché usan archivos para no requerir tablas adicionales al iniciar.
+El servicio configura sesiones y caché en archivos y la cola en modo síncrono para no requerir tablas adicionales. En Linux con SELinux, el montaje del código utiliza una etiqueta privada. El contenedor usa UID/GID `1000:1000` por defecto; se puede ajustar con las variables `UID` y `GID`.
 
-Para crear las tablas iniciales de Laravel:
-
-```sh
-docker compose exec app php artisan migrate
-```
-
-En Linux con SELinux, el montaje del código usa una etiqueta privada para permitir que Laravel escriba en el directorio compartido. El contenedor ejecuta los procesos con UID/GID `1000:1000` por defecto; se pueden ajustar con las variables `UID` y `GID`.
-
-## Fases del taller
-
-- [x] Crear la base del proyecto Laravel 11
-- [x] Configurar SQLite
-- [x] Crear migración de publicaciones
-- [x] Crear migración de comentarios
-- [x] Crear migración de imágenes
-- [x] Configurar modelos y relaciones Eloquent
-- [x] Implementar controlador de publicaciones
-- [x] Implementar controlador de comentarios
-- [x] Registrar rutas API
-- [x] Implementar almacenamiento y eliminación de imágenes
-- [x] Validar endpoints con colección Postman
-- [x] Exportar y documentar colección Postman
-- [ ] Completar la documentación y evidencias
-
-## Modelo de datos y diagrama relacional
-
-Diagrama relacional:
+## Modelo de datos
 
 ```text
                     +--------------------+
@@ -78,7 +60,7 @@ Diagrama relacional:
           post_id (FK, CASCADE)  post_id (FK, CASCADE)
                        |              |
           +------------------+  +---------------------+
-          |     comments     |  |     post_images    |
+          |     comments     |  |     post_images     |
           +------------------+  +---------------------+
           | id (PK)          |  | id (PK)            |
           | author           |  | image_path         |
@@ -88,116 +70,88 @@ Diagrama relacional:
           +------------------+
 ```
 
-## Migraciones, modelos y relaciones
+## Migraciones
 
-Las migraciones `create_posts_table`, `create_comments_table` y `create_post_images_table` definen sus respectivos campos. `comments.post_id` y `post_images.post_id` referencian `posts.id` y eliminan sus registros asociados al borrar una publicación.
+| Tabla | Columnas de dominio | Restricciones |
+|---|---|---|
+| `posts` | `id`, `title`, `content`, `likes_count`, timestamps | `likes_count` predeterminado a `0` |
+| `comments` | `id`, `post_id`, `author`, `content`, timestamps | `post_id` referencia `posts.id`, borrado en cascada |
+| `post_images` | `id`, `post_id`, `image_path`, timestamps | `post_id` referencia `posts.id`, borrado en cascada |
 
-- `Post::comments()` y `Post::images()` son relaciones `hasMany`.
-- `Comment::post()` y `PostImage::post()` son relaciones `belongsTo`.
-- Los modelos permiten asignación masiva solo de sus campos de contenido y ruta; `likes_count` se convierte a entero y no puede cambiarse accidentalmente por asignación masiva.
-
-Las pruebas de relaciones usan SQLite en memoria, sin cambiar la base local del desarrollador.
-
-## Endpoints
-
-| Método | Ruta | Descripción | Respuesta exitosa |
-|---|---|---|---:|
-| `POST` | `/api/posts` | Crea una publicación con título, contenido e imágenes opcionales (`images[]`, multipart/form-data) | `201` |
-| `GET` | `/api/posts` | Lista publicaciones paginadas con comentarios e imágenes | `200` |
-| `GET` | `/api/posts/{id}` | Consulta una publicación con sus relaciones | `200` |
-| `POST` | `/api/posts/{id}/comments` | Agrega un comentario | `201` |
-| `POST` | `/api/posts/{id}/like` | Incrementa el contador de Me gusta | `200` |
-| `DELETE` | `/api/posts/{id}` | Elimina una publicación | `204` |
-
-Los controladores de publicaciones y comentarios usan Form Requests. Las validaciones fallidas responden `422` y los recursos inexistentes `404`. La lista está paginada (15 registros por página). Se admiten hasta 10 imágenes por solicitud de creación, en formatos JPEG, PNG, GIF o WebP, con un máximo de 5 MB cada una. Laravel guarda los archivos en `storage/app/public/posts`; `image_path` contiene una ruta relativa que se puede servir bajo `/storage/`. Al eliminar una publicación se eliminan sus archivos y registros relacionados.
-
-## Evidencias de funcionamiento
-
-### Fase 1: proyecto Laravel
-
-Validado dentro del servicio Docker:
-
-```text
-Laravel Framework 11.57.0
-PHP 8.3.35
-Tests: 2 passed (2 assertions)
-```
-
-Las capturas de Postman se agregarán al implementar y probar los endpoints.
-
-### Fase 3: migración de publicaciones
-
-La tabla `posts` está creada en SQLite con `id`, `title`, `content`, `likes_count` (predeterminado a `0`) y marcas de tiempo. Comandos de verificación:
+Las migraciones iniciales de Laravel también crean sus tablas de usuarios, caché y tareas.
 
 ```sh
-docker compose exec app php artisan migrate:status
+docker compose exec app php artisan migrate
 docker compose exec app php artisan db:table posts
-```
-
-### Fase 4: migración de comentarios
-
-La tabla `comments` incluye `id`, `post_id`, `author`, `content` y marcas de tiempo. `post_id` referencia `posts.id` con borrado en cascada. Verifica el esquema con:
-
-```sh
-docker compose exec app php artisan migrate:status
 docker compose exec app php artisan db:table comments
-```
-
-### Fase 5: migración de imágenes
-
-La tabla `post_images` incluye `id`, `post_id`, `image_path` y marcas de tiempo. `post_id` referencia `posts.id` con borrado en cascada. Verifica el esquema con:
-
-```sh
-docker compose exec app php artisan migrate:status
 docker compose exec app php artisan db:table post_images
 ```
 
-### Fase 6: modelos y relaciones Eloquent
+## Modelos y relaciones
 
-Las pruebas de integración verifican las relaciones `hasMany` y `belongsTo`, además del borrado en cascada de comentarios e imágenes al eliminar una publicación. SQLite en memoria mantiene estas pruebas aisladas de los datos locales:
+- `Post::comments()` → `hasMany(Comment::class)`
+- `Post::images()` → `hasMany(PostImage::class)`
+- `Comment::post()` → `belongsTo(Post::class)`
+- `PostImage::post()` → `belongsTo(Post::class)`
 
-```sh
-docker compose exec app php artisan test --filter=PostRelationshipsTest
+Los modelos declaran campos asignables explícitamente. `likes_count` se convierte a entero y no forma parte de los atributos asignables masivamente. La base de datos aplica borrado en cascada de comentarios e imágenes.
+
+## Endpoints
+
+Todas las rutas están bajo `/api`. Las respuestas de validación se entregan como JSON al incluir `Accept: application/json`.
+
+| Método | Ruta | Descripción | Respuesta exitosa |
+|---|---|---|---:|
+| `POST` | `/api/posts` | Crear publicación; acepta título, contenido e imágenes opcionales | `201` |
+| `GET` | `/api/posts` | Lista paginada con comentarios e imágenes | `200` |
+| `GET` | `/api/posts/{id}` | Consultar una publicación y sus relaciones | `200` |
+| `POST` | `/api/posts/{id}/comments` | Agregar comentario | `201` |
+| `POST` | `/api/posts/{id}/like` | Incrementar contador de Me gusta | `200` |
+| `DELETE` | `/api/posts/{id}` | Eliminar publicación, comentarios, imágenes y archivos | `204` |
+
+Errores comunes: `404` si no existe la publicación; `422` si falla la validación.
+
+### Crear una publicación
+
+Envía JSON:
+
+```json
+{
+  "title": "Mi publicación",
+  "content": "Contenido de ejemplo."
+}
 ```
 
-### Fase 7: controlador de publicaciones
+Para adjuntar imágenes, envía `multipart/form-data` con los campos `title`, `content` y uno o más archivos bajo la misma clave `images[]`. Se permiten hasta 10 archivos por publicación, JPEG, PNG, GIF o WebP, máximo 5 MB cada uno.
 
-Pruebas del controlador: creación (`201`), validación (`422`), listado y consulta con relaciones (`200`), eliminación (`204`) y publicación inexistente (`404`).
+Los archivos se guardan en `storage/app/public/posts`. La API devuelve `image_path` como ruta relativa; su URL pública es `{{baseUrl}}/storage/{{image_path}}`. Compose crea el enlace `public/storage` al iniciar el contenedor. Al eliminar la publicación, el controlador borra sus archivos y la base de datos elimina en cascada sus filas relacionadas.
+
+## Postman
+
+Importa en Postman la colección [API REST Tipo Facebook](<./postman/Facebook API.postman_collection.json>) y el entorno [Facebook API - Local](<./postman/Facebook API - Local.postman_environment.json>). Selecciona ese entorno; por defecto apunta a `http://localhost:8000`.
+
+La colección incluye el flujo de creación, listado, consulta, comentario, Me gusta, carga y consulta pública de imágenes, validaciones `422` y eliminación. El fixture [sample.png](./postman/fixtures/sample.png) se adjunta dos veces en `images[]`. Si Postman solicita asignar los archivos al importar, selecciona ese fixture en ambos campos. Ejecuta las solicitudes en orden: las pruebas guardan IDs y rutas en las variables del entorno y limpian los posts creados al final.
+
+La misma colección puede ejecutarse desde terminal con Newman:
 
 ```sh
-docker compose exec app php artisan test --filter=PostControllerTest
+npx --yes newman run "postman/Facebook API.postman_collection.json" \
+  --environment "postman/Facebook API - Local.postman_environment.json" \
+  --working-dir .
 ```
 
-### Fase 8: controlador de comentarios
+## Pruebas y evidencias
 
-`StoreCommentRequest` valida `author` (requerido, máximo 255 caracteres) y `content` (requerido). Las pruebas verifican la creación (`201`), errores de validación (`422`) y publicación inexistente (`404`).
-
-```sh
-docker compose exec app php artisan test --filter=CommentControllerTest
-```
-
-### Fase 9: rutas API
-
-Las pruebas ahora invocan las rutas reales registradas en `routes/api.php`; se verifica también el endpoint de Me gusta (`POST /api/posts/{id}/like`).
+Ejecutar la suite:
 
 ```sh
-docker compose exec app php artisan route:list --path=api
 docker compose exec app php artisan test
+docker compose exec app vendor/bin/pint --test
 ```
 
-### Fase 10: almacenamiento y eliminación de imágenes
+Última suite automatizada registrada: **15 pruebas, 56 aserciones**, todas aprobadas. La colección de Postman se ejecutó con Newman: **11 solicitudes, 13 aserciones, 0 fallos**.
 
-La prueba de `POST /api/posts` carga dos imágenes de prueba, verifica sus registros y archivos en el disco público. Otra prueba confirma que `DELETE /api/posts/{id}` elimina el archivo y sus datos asociados. Se rechazan formatos que no sean imagen.
-
-```sh
-docker compose exec app php artisan test --filter=PostControllerTest
-```
-
-### Fase 11: validación de endpoints con Postman
-
-La colección se ejecutó contra `http://localhost:8000` con Newman, runner compatible con el formato de colección Postman. Resultado: 11 solicitudes y 13 aserciones, sin fallos. Se comprobaron publicaciones, comentarios, Me gusta, carga y acceso público a imágenes, validación `422` y eliminación `204`.
-
-Capturas JSON de respuestas reales:
+### Respuestas JSON verificadas
 
 **Crear publicación — `201 Created`**
 
@@ -211,26 +165,6 @@ Capturas JSON de respuestas reales:
   "comments": []
 }
 ```
-
-### Fase 12: colección Postman exportada
-
-Archivos para importar desde Postman:
-
-- [Colección API REST Tipo Facebook](<./postman/Facebook API.postman_collection.json>)
-- [Entorno local](<./postman/Facebook API - Local.postman_environment.json>)
-- [Imagen PNG de prueba](./postman/fixtures/sample.png)
-
-En Postman, importa ambos archivos JSON y selecciona el entorno **Facebook API - Local**. Ejecuta todos los requests de la colección en orden. Si Postman solicita volver a seleccionar archivos adjuntos, elige `postman/fixtures/sample.png` en los dos campos `images[]`. La colección crea sus propios posts, los usa durante el flujo y los elimina al final.
-
-Para ejecutar la misma colección desde terminal con Newman:
-
-```sh
-npx --yes newman run "postman/Facebook API.postman_collection.json" \
-  --environment "postman/Facebook API - Local.postman_environment.json" \
-  --working-dir .
-```
-
-Ejecución de validación del entregable: **11 requests, 13 assertions, 0 failures**. Para evidencias visuales adicionales, guarda capturas reales del Runner y de las respuestas JSON en `postman/evidence/` antes de entregar.
 
 **Crear publicación con imágenes — `201 Created`**
 
@@ -247,7 +181,7 @@ Ejecución de validación del entregable: **11 requests, 13 assertions, 0 failur
 }
 ```
 
-**Validación de publicación — `422 Unprocessable Content`**
+**Validación — `422 Unprocessable Content`**
 
 ```json
 {
@@ -259,27 +193,30 @@ Ejecución de validación del entregable: **11 requests, 13 assertions, 0 failur
 }
 ```
 
-### Fase 6: modelos y relaciones Eloquent
-
-Las pruebas crean comentarios e imágenes desde una publicación, verifican que ambos hijos recuperan su publicación y confirman que SQLite elimina sus registros asociados al borrar el padre:
-
-```sh
-docker compose exec app php artisan test --filter=PostRelationshipsTest
-```
-
-### Fase 2: SQLite
-
-Validado en Docker:
-
-```text
-Conexión predeterminada: sqlite
-Driver PDO: pdo_sqlite
-Migraciones base de Laravel: ejecutadas en database/database.sqlite
-```
+Para evidencias visuales de Postman Desktop, guarda capturas del Runner y de las respuestas en `postman/evidence/`. Los archivos para importar, el fixture y los resultados del runner Newman están versionados; Newman no reemplaza una captura de la interfaz de Postman.
 
 ## Historial de commits
 
-El historial solicitado se consulta con:
+Commits del taller, en orden:
+
+```text
+feat: crear proyecto laravel
+feat: configurar sqlite
+feat: crear migraciones de posts
+feat: crear migraciones de comentarios
+feat: crear migraciones de imagenes
+feat: configurar relaciones eloquent
+feat: implementar post controller
+feat: implementar comment controller
+feat: registrar rutas api
+feat: implementar almacenamiento de imagenes
+test: validar endpoints en postman
+test: exportar coleccion postman
+docs: crear readme del proyecto
+fix: corregir validaciones y errores finales
+```
+
+Los commits se consultan con:
 
 ```sh
 git log --oneline
