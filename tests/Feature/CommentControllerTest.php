@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Mail\NewCommentMail;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class CommentControllerTest extends TestCase
@@ -71,6 +73,30 @@ class CommentControllerTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('author', 'Ana')
             ->assertJsonPath('user_id', $this->user->id);
+    }
+
+    public function test_store_sends_email_to_post_owner_when_comment_is_created(): void
+    {
+        Mail::fake();
+
+        $owner = User::factory()->create(['email' => 'owner@example.com']);
+        $post = $owner->posts()->create([
+            'title' => 'Publicación con dueño',
+            'content' => 'Contenido de prueba',
+        ]);
+
+        $commenter = User::factory()->create(['name' => 'Luis', 'email' => 'luis@example.com']);
+        $this->actingAs($commenter, 'sanctum');
+
+        $this->postJson("/api/posts/{$post->id}/comments", [
+            'content' => 'Nuevo comentario',
+        ])
+            ->assertCreated();
+
+        Mail::assertSent(NewCommentMail::class, function (NewCommentMail $mail) use ($owner, $post) {
+            return $mail->hasTo($owner->email)
+                && $mail->post->id === $post->id;
+        });
     }
 
     public function test_store_requires_authentication(): void

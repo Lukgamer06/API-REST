@@ -261,6 +261,41 @@ Respuesta duplicada:
 }
 ```
 
+## Fase 5: notificaciones por correo
+
+La API envía un correo al propietario del post cuando alguien comenta en su publicación. El flujo usa un `Mailable` (`NewCommentMail`) y una plantilla Blade (`resources/views/emails/new-comment.blade.php`).
+
+Se recomienda Mailtrap para pruebas locales y un archivo `.env` local con valores SMTP reales. La configuración base se incluye en `.env.example`:
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="noreply@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+Ejemplo de prueba:
+
+```http
+POST {{baseUrl}}/api/posts/1/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "¡Excelente publicación!"
+}
+```
+
+El correo recibido incluye:
+- asunto: `Nuevo comentario`
+- nombre del autor
+- título de la publicación
+- contenido del comentario
+
 ### Respuestas JSON verificadas
 
 **Crear publicación — `201 Created`**
