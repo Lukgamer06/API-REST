@@ -9,7 +9,7 @@ Desarrollar una API REST académica para crear y consultar publicaciones con im�
 - PHP 8.2 o superior
 - Laravel 11
 - Docker y Docker Compose
-- SQLite (se configurará en la fase 2)
+- SQLite
 - Postman, Git, GitHub y Visual Studio Code
 
 > Laravel 11 requiere PHP 8.2 o superior. Por ello, este requisito efectivo prevalece sobre la indicación general de PHP 8.1+.
@@ -49,7 +49,7 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 - [x] Crear migración de publicaciones
 - [x] Crear migración de comentarios
 - [x] Crear migración de imágenes
-- [ ] Configurar modelos y relaciones Eloquent
+- [x] Configurar modelos y relaciones Eloquent
 - [ ] Implementar controladores, validación y rutas REST
 - [ ] Implementar almacenamiento y eliminación de imágenes
 - [ ] Validar y exportar la colección de Postman
@@ -87,7 +87,13 @@ Diagrama relacional:
 
 ## Migraciones, modelos y relaciones
 
-Las migraciones `create_posts_table`, `create_comments_table` y `create_post_images_table` definen sus respectivos campos. `comments.post_id` y `post_images.post_id` referencian `posts.id` y eliminan sus registros asociados al borrar una publicación. Las relaciones Eloquent se implementarán en su fase.
+Las migraciones `create_posts_table`, `create_comments_table` y `create_post_images_table` definen sus respectivos campos. `comments.post_id` y `post_images.post_id` referencian `posts.id` y eliminan sus registros asociados al borrar una publicación.
+
+- `Post::comments()` y `Post::images()` son relaciones `hasMany`.
+- `Comment::post()` y `PostImage::post()` son relaciones `belongsTo`.
+- Los modelos permiten asignación masiva solo de sus campos de contenido y ruta; `likes_count` se convierte a entero y no puede cambiarse accidentalmente por asignación masiva.
+
+Las pruebas de relaciones usan SQLite en memoria, sin cambiar la base local del desarrollador.
 
 ## Endpoints
 
@@ -132,6 +138,22 @@ La tabla `post_images` incluye `id`, `post_id`, `image_path` y marcas de tiempo.
 ```sh
 docker compose exec app php artisan migrate:status
 docker compose exec app php artisan db:table post_images
+```
+
+### Fase 6: modelos y relaciones Eloquent
+
+Las pruebas de integración verifican las relaciones `hasMany` y `belongsTo`, además del borrado en cascada de comentarios e imágenes al eliminar una publicación. SQLite en memoria mantiene estas pruebas aisladas de los datos locales:
+
+```sh
+docker compose exec app php artisan test --filter=PostRelationshipsTest
+```
+
+### Fase 6: modelos y relaciones Eloquent
+
+Las pruebas crean comentarios e imágenes desde una publicación, verifican que ambos hijos recuperan su publicación y confirman que SQLite elimina sus registros asociados al borrar el padre:
+
+```sh
+docker compose exec app php artisan test --filter=PostRelationshipsTest
 ```
 
 ### Fase 2: SQLite
