@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         intl \
         mbstring \
         pcntl \
-        pdo_mysql \
         zip \
     && rm -rf /var/lib/apt/lists/*
 

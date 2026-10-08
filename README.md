@@ -32,12 +32,20 @@ La API quedará accesible en <http://localhost:8000>. Para consultar los logs:
 docker compose logs -f app
 ```
 
+La base de datos local es `database/database.sqlite`; Compose la crea si no existe. No se versiona el archivo SQLite: sus cambios se conservan en el workspace. Laravel utiliza SQLite como conexión predeterminada; sesiones y caché usan archivos para no requerir tablas adicionales al iniciar.
+
+Para crear las tablas iniciales de Laravel:
+
+```sh
+docker compose exec app php artisan migrate
+```
+
 En Linux con SELinux, el montaje del código usa una etiqueta privada para permitir que Laravel escriba en el directorio compartido. El contenedor ejecuta los procesos con UID/GID `1000:1000` por defecto; se pueden ajustar con las variables `UID` y `GID`.
 
 ## Fases del taller
 
 - [x] Crear la base del proyecto Laravel 11
-- [ ] Configurar SQLite
+- [x] Configurar SQLite
 - [ ] Crear migraciones de publicaciones, comentarios e imágenes
 - [ ] Configurar modelos y relaciones Eloquent
 - [ ] Implementar controladores, validación y rutas REST
@@ -70,6 +78,16 @@ Tests: 2 passed (2 assertions)
 ```
 
 Las capturas de Postman se agregarán al implementar y probar los endpoints.
+
+### Fase 2: SQLite
+
+Validado en Docker:
+
+```text
+Conexión predeterminada: sqlite
+Driver PDO: pdo_sqlite
+Migraciones base de Laravel: ejecutadas en database/database.sqlite
+```
 
 ## Historial de commits
 
