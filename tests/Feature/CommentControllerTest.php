@@ -30,7 +30,7 @@ class CommentControllerTest extends TestCase
             'content' => 'Contenido de prueba',
         ]);
 
-        $this->postJson("/api/posts/{$post->id}/comments", [
+        $this->postJson("/api/v1/posts/{$post->id}/comments", [
             'author' => 'Ana',
             'content' => 'Buen aporte',
         ])
@@ -54,7 +54,7 @@ class CommentControllerTest extends TestCase
             'content' => 'Contenido de prueba',
         ]);
 
-        $this->postJson("/api/posts/{$post->id}/comments", [])
+        $this->postJson("/api/v1/posts/{$post->id}/comments", [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['content']);
     }
@@ -66,7 +66,7 @@ class CommentControllerTest extends TestCase
             'content' => 'Contenido de prueba',
         ]);
 
-        $this->postJson("/api/posts/{$post->id}/comments", [
+        $this->postJson("/api/v1/posts/{$post->id}/comments", [
             'author' => 'Autor falsificado',
             'content' => 'Buen aporte',
         ])
@@ -88,7 +88,7 @@ class CommentControllerTest extends TestCase
         $commenter = User::factory()->create(['name' => 'Luis', 'email' => 'luis@example.com']);
         $this->actingAs($commenter, 'sanctum');
 
-        $this->postJson("/api/posts/{$post->id}/comments", [
+        $this->postJson("/api/v1/posts/{$post->id}/comments", [
             'content' => 'Nuevo comentario',
         ])
             ->assertCreated();
@@ -107,14 +107,14 @@ class CommentControllerTest extends TestCase
         ]);
         $this->app['auth']->forgetGuards();
 
-        $this->postJson("/api/posts/{$post->id}/comments", [
+        $this->postJson("/api/v1/posts/{$post->id}/comments", [
             'content' => 'Buen aporte',
         ])->assertUnauthorized();
     }
 
     public function test_store_returns_not_found_for_missing_post(): void
     {
-        $this->postJson('/api/posts/999999/comments', [
+        $this->postJson('/api/v1/posts/999999/comments', [
             'author' => 'Ana',
             'content' => 'Buen aporte',
         ])->assertNotFound();

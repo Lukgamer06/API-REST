@@ -25,7 +25,7 @@ class PostControllerTest extends TestCase
 
     public function test_store_creates_post_and_returns_created_status(): void
     {
-        $response = $this->postJson('/api/posts', [
+        $response = $this->postJson('/api/v1/posts', [
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
             'likes_count' => 999,
@@ -47,7 +47,7 @@ class PostControllerTest extends TestCase
 
     public function test_store_validates_required_post_fields(): void
     {
-        $this->postJson('/api/posts', [])
+        $this->postJson('/api/v1/posts', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['title', 'content']);
     }
@@ -57,7 +57,7 @@ class PostControllerTest extends TestCase
         Storage::fake('public');
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pR8AAAAASUVORK5CYII=', true);
 
-        $response = $this->post('/api/posts', [
+        $response = $this->post('/api/v1/posts', [
             'title' => 'Publicación con imágenes',
             'content' => 'Contenido de prueba',
             'images' => [
@@ -81,7 +81,7 @@ class PostControllerTest extends TestCase
 
     public function test_store_rejects_non_image_uploads(): void
     {
-        $this->post('/api/posts', [
+        $this->post('/api/v1/posts', [
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
             'images' => [
@@ -99,7 +99,7 @@ class PostControllerTest extends TestCase
     {
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pR8AAAAASUVORK5CYII=', true);
 
-        $this->post('/api/posts', [
+        $this->post('/api/v1/posts', [
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
             'images' => array_map(
@@ -119,7 +119,7 @@ class PostControllerTest extends TestCase
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pR8AAAAASUVORK5CYII=', true);
         $oversizedPng = $png.str_repeat('x', (5 * 1024 * 1024) + 1 - strlen($png));
 
-        $this->post('/api/posts', [
+        $this->post('/api/v1/posts', [
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
             'images' => [
@@ -147,7 +147,7 @@ class PostControllerTest extends TestCase
             'image_path' => 'posts/example.jpg',
         ]);
 
-        $this->getJson('/api/posts')
+        $this->getJson('/api/v1/posts')
             ->assertOk()
             ->assertJsonPath('data.0.id', $post->id)
             ->assertJsonPath('data.0.comments.0.author', 'Ana')
@@ -170,11 +170,11 @@ class PostControllerTest extends TestCase
                 'total',
             ]);
 
-        $this->getJson('/api/posts?search=prueba')
+        $this->getJson('/api/v1/posts?search=prueba')
             ->assertOk()
             ->assertJsonPath('data.0.id', $post->id);
 
-        $this->getJson("/api/posts/{$post->id}")
+        $this->getJson("/api/v1/posts/{$post->id}")
             ->assertOk()
             ->assertJsonPath('id', $post->id)
             ->assertJsonPath('comments.0.author', 'Ana')
@@ -196,7 +196,7 @@ class PostControllerTest extends TestCase
             $post->images()->create(['image_path' => $imagePath]);
         }
 
-        $this->deleteJson("/api/posts/{$post->id}")
+        $this->deleteJson("/api/v1/posts/{$post->id}")
             ->assertNoContent();
 
         $this->assertDatabaseMissing('posts', ['id' => $post->id]);
@@ -214,7 +214,7 @@ class PostControllerTest extends TestCase
             'content' => 'Contenido de prueba',
         ]);
 
-        $this->deleteJson("/api/posts/{$post->id}")->assertForbidden();
+        $this->deleteJson("/api/v1/posts/{$post->id}")->assertForbidden();
         $this->assertDatabaseHas('posts', ['id' => $post->id]);
     }
 
@@ -226,7 +226,7 @@ class PostControllerTest extends TestCase
         ]);
         $this->app['auth']->forgetGuards();
 
-        $this->deleteJson("/api/posts/{$post->id}")->assertUnauthorized();
+        $this->deleteJson("/api/v1/posts/{$post->id}")->assertUnauthorized();
         $this->assertDatabaseHas('posts', ['id' => $post->id]);
     }
 
@@ -234,7 +234,7 @@ class PostControllerTest extends TestCase
     {
         $this->app['auth']->forgetGuards();
 
-        $this->postJson('/api/posts', [
+        $this->postJson('/api/v1/posts', [
             'title' => 'Publicación sin sesión',
             'content' => 'Contenido de prueba',
         ])->assertUnauthorized();
@@ -242,7 +242,7 @@ class PostControllerTest extends TestCase
 
     public function test_show_returns_not_found_for_missing_post(): void
     {
-        $this->getJson('/api/posts/999999')->assertNotFound();
+        $this->getJson('/api/v1/posts/999999')->assertNotFound();
     }
 
     public function test_like_registers_real_like_and_prevents_duplicates(): void
@@ -252,7 +252,7 @@ class PostControllerTest extends TestCase
             'content' => 'Contenido de prueba',
         ]);
 
-        $this->postJson("/api/posts/{$post->id}/like")
+        $this->postJson("/api/v1/posts/{$post->id}/like")
             ->assertOk()
             ->assertJsonPath('likes_count', 1)
             ->assertJsonPath('post.id', $post->id);
@@ -262,7 +262,7 @@ class PostControllerTest extends TestCase
             'user_id' => $this->user->id,
         ]);
 
-        $this->postJson("/api/posts/{$post->id}/like")
+        $this->postJson("/api/v1/posts/{$post->id}/like")
             ->assertStatus(409)
             ->assertJsonPath('message', 'Ya has dado like a esta publicación.');
 
@@ -280,12 +280,12 @@ class PostControllerTest extends TestCase
             'content' => 'La universidad ofrece clases interesantes.',
         ]);
 
-        $this->getJson('/api/posts?search=viaje')
+        $this->getJson('/api/v1/posts?search=viaje')
             ->assertOk()
             ->assertJsonPath('total', 1)
             ->assertJsonPath('data.0.title', 'Viaje a Japón');
 
-        $this->getJson('/api/posts?search=universidad')
+        $this->getJson('/api/v1/posts?search=universidad')
             ->assertOk()
             ->assertJsonPath('total', 1)
             ->assertJsonPath('data.0.content', 'La universidad ofrece clases interesantes.');

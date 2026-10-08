@@ -14,7 +14,7 @@ class AuthControllerTest extends TestCase
 
     public function test_register_creates_user_and_returns_bearer_token(): void
     {
-        $response = $this->postJson('/api/register', [
+        $response = $this->postJson('/api/v1/register', [
             'name' => 'Ada Lovelace',
             'email' => 'ada@example.com',
             'password' => 'password123',
@@ -38,7 +38,7 @@ class AuthControllerTest extends TestCase
     {
         User::factory()->create(['email' => 'ada@example.com']);
 
-        $this->postJson('/api/register', [
+        $this->postJson('/api/v1/register', [
             'name' => '',
             'email' => 'ada@example.com',
             'password' => 'short',
@@ -55,7 +55,7 @@ class AuthControllerTest extends TestCase
             'password' => Hash::make('password123'),
         ]);
 
-        $this->postJson('/api/login', [
+        $this->postJson('/api/v1/login', [
             'email' => 'ada@example.com',
             'password' => 'password123',
         ])
@@ -74,7 +74,7 @@ class AuthControllerTest extends TestCase
             'password' => Hash::make('password123'),
         ]);
 
-        $this->postJson('/api/login', [
+        $this->postJson('/api/v1/login', [
             'email' => 'ada@example.com',
             'password' => 'incorrect-password',
         ])
@@ -88,7 +88,7 @@ class AuthControllerTest extends TestCase
         $token = $user->createToken('postman')->plainTextToken;
 
         $this->withToken($token)
-            ->postJson('/api/posts', [
+            ->postJson('/api/v1/posts', [
                 'title' => 'Publicación autenticada',
                 'content' => 'Contenido de prueba',
             ])
@@ -106,18 +106,18 @@ class AuthControllerTest extends TestCase
         $token = $user->createToken('test-token')->plainTextToken;
 
         $this->withToken($token)
-            ->postJson('/api/logout')
+            ->postJson('/api/v1/logout')
             ->assertOk()
             ->assertJsonPath('message', 'Sesión cerrada correctamente.');
 
         $this->assertDatabaseCount('personal_access_tokens', 0);
 
         Auth::forgetGuards();
-        $this->withToken($token)->postJson('/api/logout')->assertUnauthorized();
+        $this->withToken($token)->postJson('/api/v1/logout')->assertUnauthorized();
     }
 
     public function test_logout_requires_authentication(): void
     {
-        $this->postJson('/api/logout')->assertUnauthorized();
+        $this->postJson('/api/v1/logout')->assertUnauthorized();
     }
 }
