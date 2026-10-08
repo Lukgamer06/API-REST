@@ -46,7 +46,9 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 
 - [x] Crear la base del proyecto Laravel 11
 - [x] Configurar SQLite
-- [ ] Crear migraciones de publicaciones, comentarios e imágenes
+- [x] Crear migración de publicaciones
+- [ ] Crear migración de comentarios
+- [ ] Crear migración de imágenes
 - [ ] Configurar modelos y relaciones Eloquent
 - [ ] Implementar controladores, validación y rutas REST
 - [ ] Implementar almacenamiento y eliminación de imágenes
@@ -55,11 +57,22 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 
 ## Modelo de datos y diagrama relacional
 
-Se documentará al implementar las migraciones.
+Diagrama parcial (se completará al agregar comentarios e imágenes):
+
+```text
+posts
+-----
+id (PK)
+title
+content
+likes_count
+created_at
+updated_at
+```
 
 ## Migraciones, modelos y relaciones
 
-Pendiente de las fases correspondientes.
+La migración `create_posts_table` crea los campos de publicaciones. Comentarios, imágenes y relaciones Eloquent se implementarán en sus fases.
 
 ## Endpoints
 
@@ -78,6 +91,15 @@ Tests: 2 passed (2 assertions)
 ```
 
 Las capturas de Postman se agregarán al implementar y probar los endpoints.
+
+### Fase 3: migración de publicaciones
+
+La tabla `posts` está creada en SQLite con `id`, `title`, `content`, `likes_count` (predeterminado a `0`) y marcas de tiempo. Comandos de verificación:
+
+```sh
+docker compose exec app php artisan migrate:status
+docker compose exec app php artisan db:table posts
+```
 
 ### Fase 2: SQLite
 
