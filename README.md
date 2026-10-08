@@ -47,7 +47,7 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 - [x] Crear la base del proyecto Laravel 11
 - [x] Configurar SQLite
 - [x] Crear migración de publicaciones
-- [ ] Crear migración de comentarios
+- [x] Crear migración de comentarios
 - [ ] Crear migración de imágenes
 - [ ] Configurar modelos y relaciones Eloquent
 - [ ] Implementar controladores, validación y rutas REST
@@ -57,22 +57,22 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 
 ## Modelo de datos y diagrama relacional
 
-Diagrama parcial (se completará al agregar comentarios e imágenes):
+Diagrama parcial (se completará al agregar imágenes):
 
 ```text
-posts
------
-id (PK)
-title
-content
-likes_count
-created_at
-updated_at
+posts                         comments
+-----                         --------
+id (PK) <-------------------- post_id (FK, CASCADE)
+title                         id (PK)
+content                       author
+likes_count                   content
+created_at                    created_at
+updated_at                    updated_at
 ```
 
 ## Migraciones, modelos y relaciones
 
-La migración `create_posts_table` crea los campos de publicaciones. Comentarios, imágenes y relaciones Eloquent se implementarán en sus fases.
+Las migraciones `create_posts_table` y `create_comments_table` definen sus respectivos campos. La clave foránea `comments.post_id` referencia `posts.id` y elimina los comentarios asociados al borrar su publicación. Las relaciones Eloquent se implementarán en su fase.
 
 ## Endpoints
 
@@ -99,6 +99,15 @@ La tabla `posts` está creada en SQLite con `id`, `title`, `content`, `likes_cou
 ```sh
 docker compose exec app php artisan migrate:status
 docker compose exec app php artisan db:table posts
+```
+
+### Fase 4: migración de comentarios
+
+La tabla `comments` incluye `id`, `post_id`, `author`, `content` y marcas de tiempo. `post_id` referencia `posts.id` con borrado en cascada. Verifica el esquema con:
+
+```sh
+docker compose exec app php artisan migrate:status
+docker compose exec app php artisan db:table comments
 ```
 
 ### Fase 2: SQLite
