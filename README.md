@@ -54,7 +54,8 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 - [x] Implementar controlador de comentarios
 - [x] Registrar rutas API
 - [x] Implementar almacenamiento y eliminación de imágenes
-- [ ] Validar y exportar la colección de Postman
+- [x] Validar endpoints con colección Postman
+- [ ] Exportar y documentar colección Postman
 - [ ] Completar la documentación y evidencias
 
 ## Modelo de datos y diagrama relacional
@@ -190,6 +191,52 @@ La prueba de `POST /api/posts` carga dos imágenes de prueba, verifica sus regis
 
 ```sh
 docker compose exec app php artisan test --filter=PostControllerTest
+```
+
+### Fase 11: validación de endpoints con Postman
+
+La colección se ejecutó contra `http://localhost:8000` con Newman, runner compatible con el formato de colección Postman. Resultado: 11 solicitudes y 13 aserciones, sin fallos. Se comprobaron publicaciones, comentarios, Me gusta, carga y acceso público a imágenes, validación `422` y eliminación `204`.
+
+Capturas JSON de respuestas reales:
+
+**Crear publicación — `201 Created`**
+
+```json
+{
+  "id": 5,
+  "title": "Post desde Postman",
+  "content": "Publicación de prueba para el taller.",
+  "likes_count": 0,
+  "images": [],
+  "comments": []
+}
+```
+
+**Crear publicación con imágenes — `201 Created`**
+
+```json
+{
+  "id": 6,
+  "title": "Post con imágenes de prueba",
+  "likes_count": 0,
+  "images": [
+    { "image_path": "posts/Y05IhDYJn0UAQSRAFwdvpnzG1btRBqg42zfMN2CS.png" },
+    { "image_path": "posts/XzgnbZE114NCHtyoJFtkTHeL0eWVwE3gLFuZlvlk.png" }
+  ],
+  "comments": []
+}
+```
+
+**Validación de publicación — `422 Unprocessable Content`**
+
+```json
+{
+  "message": "The title field is required. (and 1 more error)",
+  "errors": {
+    "title": ["The title field is required."],
+    "content": ["The content field is required."]
+  }
+}
 ```
 
 ### Fase 6: modelos y relaciones Eloquent
