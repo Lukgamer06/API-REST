@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePostRequest;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -33,8 +34,8 @@ class PostController extends Controller
         $storedPaths = [];
 
         try {
-            $post = DB::transaction(function () use ($data, $images, &$storedPaths): Post {
-                $post = Post::create($data);
+            $post = DB::transaction(function () use ($data, $images, $request, &$storedPaths): Post {
+                $post = $request->user()->posts()->create($data);
 
                 foreach ($images as $image) {
                     if (! $image instanceof UploadedFile) {
@@ -76,8 +77,10 @@ class PostController extends Controller
         return response()->json($post->refresh()->load(['images', 'comments']));
     }
 
-    public function destroy(Post $post): Response
+    public function destroy(Request $request, Post $post): Response
     {
+        abort_unless($request->user()->is($post->user), 403);
+
         $imagePaths = $post->images()->pluck('image_path')->all();
 
         if ($imagePaths !== [] && ! Storage::disk('public')->delete($imagePaths)) {

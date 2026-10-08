@@ -2,10 +2,134 @@
   "info": {
     "_postman_id": "d2c843f1-57cc-4cd5-a9f2-76ca94148c72",
     "name": "API REST Tipo Facebook",
-    "description": "Flujo de validación de publicaciones, imágenes, comentarios, Me gusta y respuestas de error. Importa también Facebook API - Local.postman_environment.json y selecciona ese entorno.",
+    "description": "Flujo de autenticación Sanctum y validación de publicaciones, imágenes, comentarios, Me gusta y respuestas de error. Importa también Facebook API - Local.postman_environment.json y selecciona ese entorno.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
   "item": [
+    {
+      "name": "Registrar usuario",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.environment.set('authEmail', 'postman-' + Date.now() + '@example.test');",
+              "pm.environment.set('authPassword', 'password123');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('El registro responde 201 y devuelve un token Bearer', function () {",
+              "    pm.response.to.have.status(201);",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.token).to.be.a('string').and.not.empty;",
+              "    pm.expect(body.token_type).to.eql('Bearer');",
+              "    pm.environment.set('token', body.token);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Ana Postman\",\n  \"email\": \"{{authEmail}}\",\n  \"password\": \"{{authPassword}}\",\n  \"password_confirmation\": \"{{authPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "register"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Iniciar sesión",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('El login responde 200 y emite token', function () {",
+              "    pm.response.to.have.status(200);",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.token).to.be.a('string').and.not.empty;",
+              "    pm.expect(body.token_type).to.eql('Bearer');",
+              "    pm.environment.set('token', body.token);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{authEmail}}\",\n  \"password\": \"{{authPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "login"
+          ]
+        }
+      }
+    },
     {
       "name": "Crear publicación",
       "event": [
@@ -497,6 +621,42 @@
             "api",
             "posts",
             "{{postId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cerrar sesión",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Logout responde 200 y revoca el token', function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(pm.response.json().message).to.eql('Sesión cerrada correctamente.');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/logout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "logout"
           ]
         }
       }

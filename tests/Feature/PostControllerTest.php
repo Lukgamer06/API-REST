@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -11,6 +12,16 @@ use Tests\TestCase;
 class PostControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user, 'sanctum');
+    }
 
     public function test_store_creates_post_and_returns_created_status(): void
     {
@@ -30,6 +41,7 @@ class PostControllerTest extends TestCase
         $this->assertDatabaseHas('posts', [
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
+            'user_id' => $this->user->id,
         ]);
     }
 
@@ -123,7 +135,7 @@ class PostControllerTest extends TestCase
 
     public function test_index_and_show_include_post_relations(): void
     {
-        $post = Post::create([
+        $post = $this->user->posts()->create([
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
         ]);
@@ -152,7 +164,7 @@ class PostControllerTest extends TestCase
     {
         Storage::fake('public');
 
-        $post = Post::create([
+        $post = $this->user->posts()->create([
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
         ]);
@@ -172,6 +184,39 @@ class PostControllerTest extends TestCase
             $this->assertDatabaseMissing('post_images', ['image_path' => $imagePath]);
             Storage::disk('public')->assertMissing($imagePath);
         }
+    }
+
+    public function test_destroy_forbids_deleting_another_users_post(): void
+    {
+        $post = User::factory()->create()->posts()->create([
+            'title' => 'Publicación ajena',
+            'content' => 'Contenido de prueba',
+        ]);
+
+        $this->deleteJson("/api/posts/{$post->id}")->assertForbidden();
+        $this->assertDatabaseHas('posts', ['id' => $post->id]);
+    }
+
+    public function test_destroy_requires_authentication(): void
+    {
+        $post = Post::create([
+            'title' => 'Publicación protegida',
+            'content' => 'Contenido de prueba',
+        ]);
+        $this->app['auth']->forgetGuards();
+
+        $this->deleteJson("/api/posts/{$post->id}")->assertUnauthorized();
+        $this->assertDatabaseHas('posts', ['id' => $post->id]);
+    }
+
+    public function test_store_requires_authentication(): void
+    {
+        $this->app['auth']->forgetGuards();
+
+        $this->postJson('/api/posts', [
+            'title' => 'Publicación sin sesión',
+            'content' => 'Contenido de prueba',
+        ])->assertUnauthorized();
     }
 
     public function test_show_returns_not_found_for_missing_post(): void

@@ -1,6 +1,6 @@
 # API REST Tipo Facebook con Laravel
 
-API REST académica para crear publicaciones con múltiples imágenes, agregar comentarios, dar Me gusta, consultar publicaciones y borrar una publicación con sus imágenes y comentarios.
+API REST académica tipo Facebook para crear publicaciones con múltiples imágenes, comentarios y Me gusta. La Fase 1 avanzada incorpora autenticación por token con Laravel Sanctum y atribución de publicaciones y comentarios a su usuario.
 
 ## Objetivo
 
@@ -10,6 +10,7 @@ Practicar el desarrollo de una API REST con Laravel 11, arquitectura MVC, Eloque
 
 - PHP 8.3 en Docker (Laravel 11 requiere PHP 8.2 o superior; no es compatible con PHP 8.1).
 - Laravel 11.57
+- Laravel Sanctum 4
 - SQLite
 - Docker y Docker Compose
 - Postman y Newman
@@ -45,38 +46,22 @@ El servicio configura sesiones y caché en archivos y la cola en modo síncrono 
 ## Modelo de datos
 
 ```text
-                    +--------------------+
-                    |       posts        |
-                    +--------------------+
-                    | id (PK)            |
-                    | title              |
-                    | content            |
-                    | likes_count        |
-                    | created_at         |
-                    | updated_at         |
-                    +--------------------+
-                       ^              ^
-                       |              |
-          post_id (FK, CASCADE)  post_id (FK, CASCADE)
-                       |              |
-          +------------------+  +---------------------+
-          |     comments     |  |     post_images     |
-          +------------------+  +---------------------+
-          | id (PK)          |  | id (PK)            |
-          | author           |  | image_path         |
-          | content          |  | created_at         |
-          | created_at       |  | updated_at         |
-          | updated_at       |  +---------------------+
-          +------------------+
+users 1 ─────────── * posts 1 ─────────── * post_images
+  │                     │
+  │                     └──────────────── * comments
+  └─────────────────────────────────────── * comments
 ```
+
+Las nuevas columnas `posts.user_id` y `comments.user_id` son claves foráneas anulables para conservar registros que existían antes de activar la autenticación; las escrituras nuevas siempre asignan el usuario autenticado. Si se elimina un usuario, estas referencias pasan a `NULL`.
 
 ## Migraciones
 
 | Tabla | Columnas de dominio | Restricciones |
 |---|---|---|
-| `posts` | `id`, `title`, `content`, `likes_count`, timestamps | `likes_count` predeterminado a `0` |
-| `comments` | `id`, `post_id`, `author`, `content`, timestamps | `post_id` referencia `posts.id`, borrado en cascada |
+| `posts` | `id`, `user_id`, `title`, `content`, `likes_count`, timestamps | `user_id` referencia `users.id`; `likes_count` predeterminado a `0` |
+| `comments` | `id`, `post_id`, `user_id`, `author`, `content`, timestamps | Claves foráneas a `posts.id` y `users.id`; `post_id` se borra en cascada |
 | `post_images` | `id`, `post_id`, `image_path`, timestamps | `post_id` referencia `posts.id`, borrado en cascada |
+| `personal_access_tokens` | Tokens de acceso de Sanctum | Los tokens quedan asociados al usuario y pueden revocarse |
 
 Las migraciones iniciales de Laravel también crean sus tablas de usuarios, caché y tareas.
 
@@ -91,10 +76,60 @@ docker compose exec app php artisan db:table post_images
 
 - `Post::comments()` → `hasMany(Comment::class)`
 - `Post::images()` → `hasMany(PostImage::class)`
+- `Post::user()` → `belongsTo(User::class)`
 - `Comment::post()` → `belongsTo(Post::class)`
+- `Comment::user()` → `belongsTo(User::class)`
 - `PostImage::post()` → `belongsTo(Post::class)`
+- `User::posts()` y `User::comments()` → `hasMany`
 
 Los modelos declaran campos asignables explícitamente. `likes_count` se convierte a entero y no forma parte de los atributos asignables masivamente. La base de datos aplica borrado en cascada de comentarios e imágenes.
+
+## Fase avanzada 1: autenticación con Sanctum
+
+Se usa autenticación **Bearer Token** para clientes API. El registro y login son públicos; logout y las operaciones que modifican recursos requieren un token válido. La lectura de publicaciones continúa siendo pública. Solo el dueño puede eliminar su publicación.
+
+| Método | Ruta | Acceso |
+|---|---|---|
+| `POST` | `/api/register` | Público; registra y devuelve token (`201`) |
+| `POST` | `/api/login` | Público; inicia sesión y devuelve token (`200`) |
+| `POST` | `/api/logout` | Bearer Token; revoca el token actual (`200`) |
+
+Registro — `POST /api/register`:
+
+```json
+{
+  "name": "Ada Lovelace",
+  "email": "ada@example.com",
+  "password": "password123",
+  "password_confirmation": "password123"
+}
+```
+
+La respuesta contiene `token`, `token_type: "Bearer"` y el usuario sin campos sensibles. Las reglas Form Request validan nombre, email único, contraseña de al menos 8 caracteres y su confirmación. El login devuelve `401` cuando las credenciales no coinciden; errores de formato devuelven `422`.
+
+Respuesta — `201 Created` (el valor de token es generado):
+
+```json
+{
+  "token": "<token-generado>",
+  "token_type": "Bearer",
+  "user": {
+    "id": 1,
+    "name": "Ada Lovelace",
+    "email": "ada@example.com"
+  }
+}
+```
+
+Para Postman:
+
+1. Envía `POST {{baseUrl}}/api/register` o `POST {{baseUrl}}/api/login` con `Content-Type: application/json`.
+2. Copia el valor de `token` de la respuesta.
+3. En las solicitudes protegidas selecciona **Authorization → Bearer Token** y pega el token; alternativamente envía `Authorization: Bearer <token>`.
+4. Usa `POST /api/posts`, `POST /api/posts/{id}/comments`, `POST /api/posts/{id}/like`, `DELETE /api/posts/{id}` o `POST /api/logout`.
+5. Sin token válido una mutación devuelve `401`; un usuario distinto del dueño que intente borrar el post recibe `403`.
+
+El usuario de la sesión es la fuente de identidad para `posts.user_id`, `comments.user_id` y el `author` de cada comentario; no se acepta que el cliente asigne otro propietario.
 
 ## Endpoints
 
@@ -102,12 +137,15 @@ Todas las rutas están bajo `/api`. Las respuestas de validación se entregan co
 
 | Método | Ruta | Descripción | Respuesta exitosa |
 |---|---|---|---:|
-| `POST` | `/api/posts` | Crear publicación; acepta título, contenido e imágenes opcionales | `201` |
-| `GET` | `/api/posts` | Lista paginada con comentarios e imágenes | `200` |
+| `POST` | `/api/register` | Registrar usuario y emitir token | `201` |
+| `POST` | `/api/login` | Iniciar sesión y emitir token | `200` |
+| `POST` | `/api/logout` | Revocar token actual (**Bearer requerido**) | `200` |
+| `POST` | `/api/posts` | Crear publicación; acepta título, contenido e imágenes opcionales (**Bearer requerido**) | `201` |
+| `GET` | `/api/posts` | Lista paginada con comentarios e imágenes (público) | `200` |
 | `GET` | `/api/posts/{id}` | Consultar una publicación y sus relaciones | `200` |
-| `POST` | `/api/posts/{id}/comments` | Agregar comentario | `201` |
-| `POST` | `/api/posts/{id}/like` | Incrementar contador de Me gusta | `200` |
-| `DELETE` | `/api/posts/{id}` | Eliminar publicación, comentarios, imágenes y archivos | `204` |
+| `POST` | `/api/posts/{id}/comments` | Agregar comentario (**Bearer requerido**) | `201` |
+| `POST` | `/api/posts/{id}/like` | Incrementar contador (**Bearer requerido**) | `200` |
+| `DELETE` | `/api/posts/{id}` | Eliminar post propio, comentarios, imágenes y archivos (**Bearer requerido**) | `204` |
 
 Errores comunes: `404` si no existe la publicación; `422` si falla la validación.
 
@@ -149,7 +187,9 @@ docker compose exec app php artisan test
 docker compose exec app vendor/bin/pint --test
 ```
 
-Última suite automatizada registrada: **17 pruebas, 70 aserciones**, todas aprobadas. Pint valida los **40 archivos PHP**. La colección de Postman se ejecutó con Newman: **11 solicitudes, 13 aserciones, 0 fallos**.
+Suite del taller inicial: **17 pruebas, 70 aserciones**. La colección inicial de Postman se ejecutó con Newman: **11 solicitudes, 13 aserciones, 0 fallos**. En la Fase avanzada 1, las pruebas ampliadas validan registro, login, revocación, Bearer Token, protección de endpoints, asociación con usuario autenticado y autorización de borrado.
+
+**Regresión de la Fase avanzada 1:** PHPUnit aprobó **29 pruebas y 114 aserciones**; Pint aprobó **46 archivos PHP**; Newman completó **14 solicitudes y 16 aserciones sin fallos**. Las 8 migraciones están aplicadas y las 9 rutas API están registradas.
 
 ### Respuestas JSON verificadas
 
@@ -233,4 +273,11 @@ Los commits se consultan con:
 
 ```sh
 git log --oneline
+```
+
+Commits de la Fase avanzada completada hasta el momento:
+
+```text
+feat: instalar laravel sanctum
+feat: implementar registro de usuarios
 ```
