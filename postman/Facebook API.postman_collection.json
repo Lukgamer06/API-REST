@@ -1,0 +1,505 @@
+{
+  "info": {
+    "_postman_id": "d2c843f1-57cc-4cd5-a9f2-76ca94148c72",
+    "name": "API REST Tipo Facebook",
+    "description": "Flujo de validación de publicaciones, imágenes, comentarios, Me gusta y respuestas de error. Importa también Facebook API - Local.postman_environment.json y selecciona ese entorno.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Crear publicación",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 201 Created', function () { pm.response.to.have.status(201); });",
+              "const post = pm.response.json();",
+              "pm.test('Devuelve la publicación y sus relaciones vacías', function () {",
+              "    pm.expect(post.id).to.be.a('number');",
+              "    pm.expect(post.title).to.eql('Post desde Postman');",
+              "    pm.expect(post.likes_count).to.eql(0);",
+              "    pm.expect(post.comments).to.be.an('array').that.is.empty;",
+              "    pm.expect(post.images).to.be.an('array').that.is.empty;",
+              "});",
+              "pm.environment.set('postId', post.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Post desde Postman\",\n  \"content\": \"Publicación de prueba para el taller.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/posts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "posts"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Listar publicaciones",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200 OK', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Devuelve lista paginada con relaciones', function () {",
+              "    pm.expect(body.data).to.be.an('array');",
+              "    pm.expect(body).to.have.property('current_page');",
+              "    const post = body.data.find((item) => item.id === Number(pm.environment.get('postId')));",
+              "    pm.expect(post, 'la publicación creada aparece en la lista').to.exist;",
+              "    pm.expect(post.comments).to.be.an('array');",
+              "    pm.expect(post.images).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/posts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "posts"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Consultar publicación",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200 y el ID coincide', function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(pm.response.json().id).to.eql(Number(pm.environment.get('postId')));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/posts/{{postId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "posts",
+            "{{postId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Agregar comentario",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 201 y asocia el comentario al post', function () {",
+              "    pm.response.to.have.status(201);",
+              "    const comment = pm.response.json();",
+              "    pm.expect(comment.post_id).to.eql(Number(pm.environment.get('postId')));",
+              "    pm.expect(comment.author).to.eql('Ana Postman');",
+              "    pm.environment.set('commentId', comment.id);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"author\": \"Ana Postman\",\n  \"content\": \"Comentario de prueba desde Postman.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/posts/{{postId}}/comments",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "posts",
+            "{{postId}}",
+            "comments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Dar Me gusta",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200 y el contador aumenta', function () {",
+              "    pm.response.to.have.status(200);",
+              "    const post = pm.response.json();",
+              "    pm.expect(post.id).to.eql(Number(pm.environment.get('postId')));",
+              "    pm.expect(post.likes_count).to.eql(1);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/posts/{{postId}}/like",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "posts",
+            "{{postId}}",
+            "like"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crear publicación con varias imágenes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 201 con dos imágenes almacenadas', function () {",
+              "    pm.response.to.have.status(201);",
+              "    const post = pm.response.json();",
+              "    pm.expect(post.images).to.have.length(2);",
+              "    post.images.forEach((image) => pm.expect(image.image_path).to.match(/^posts\\//));",
+              "    pm.environment.set('imagePostId', post.id);",
+              "    pm.environment.set('imagePath1', post.images[0].image_path);",
+              "    pm.environment.set('imagePath2', post.images[1].image_path);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Post con imágenes de prueba",
+              "type": "text"
+            },
+            {
+              "key": "content",
+              "value": "Archivos de prueba de la colección Postman.",
+              "type": "text"
+            },
+            {
+              "key": "images[]",
+              "type": "file",
+              "src": "postman/fixtures/sample.png"
+            },
+            {
+              "key": "images[]",
+              "type": "file",
+              "src": "postman/fixtures/sample.png"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/posts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "posts"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Consultar archivo de imagen pública",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('El archivo almacenado se sirve públicamente', function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(pm.response.headers.get('Content-Type')).to.include('image/png');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/storage/{{imagePath1}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "storage",
+            "{{imagePath1}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Rechazar publicación sin campos requeridos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 422 con errores para título y contenido', function () {",
+              "    pm.response.to.have.status(422);",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.errors).to.have.property('title');",
+              "    pm.expect(body.errors).to.have.property('content');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/posts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "posts"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Rechazar archivo que no es imagen",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 422 por archivo no válido', function () {",
+              "    pm.response.to.have.status(422);",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.errors).to.have.property('images.0');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Publicación inválida",
+              "type": "text"
+            },
+            {
+              "key": "content",
+              "value": "Este archivo no debe aceptarse.",
+              "type": "text"
+            },
+            {
+              "key": "images[]",
+              "value": "no-es-una-imagen",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/posts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "posts"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Eliminar publicación con imágenes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 204 y elimina publicación e imágenes', function () {",
+              "    pm.response.to.have.status(204);",
+              "    pm.expect(pm.response.text()).to.eql('');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/posts/{{imagePostId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "posts",
+            "{{imagePostId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Eliminar publicación de prueba",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 204 No Content', function () {",
+              "    pm.response.to.have.status(204);",
+              "    pm.expect(pm.response.text()).to.eql('');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/posts/{{postId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "posts",
+            "{{postId}}"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -55,7 +55,7 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 - [x] Registrar rutas API
 - [x] Implementar almacenamiento y eliminación de imágenes
 - [x] Validar endpoints con colección Postman
-- [ ] Exportar y documentar colección Postman
+- [x] Exportar y documentar colección Postman
 - [ ] Completar la documentación y evidencias
 
 ## Modelo de datos y diagrama relacional
@@ -211,6 +211,26 @@ Capturas JSON de respuestas reales:
   "comments": []
 }
 ```
+
+### Fase 12: colección Postman exportada
+
+Archivos para importar desde Postman:
+
+- [Colección API REST Tipo Facebook](<./postman/Facebook API.postman_collection.json>)
+- [Entorno local](<./postman/Facebook API - Local.postman_environment.json>)
+- [Imagen PNG de prueba](./postman/fixtures/sample.png)
+
+En Postman, importa ambos archivos JSON y selecciona el entorno **Facebook API - Local**. Ejecuta todos los requests de la colección en orden. Si Postman solicita volver a seleccionar archivos adjuntos, elige `postman/fixtures/sample.png` en los dos campos `images[]`. La colección crea sus propios posts, los usa durante el flujo y los elimina al final.
+
+Para ejecutar la misma colección desde terminal con Newman:
+
+```sh
+npx --yes newman run "postman/Facebook API.postman_collection.json" \
+  --environment "postman/Facebook API - Local.postman_environment.json" \
+  --working-dir .
+```
+
+Ejecución de validación del entregable: **11 requests, 13 assertions, 0 failures**. Para evidencias visuales adicionales, guarda capturas reales del Runner y de las respuestas JSON en `postman/evidence/` antes de entregar.
 
 **Crear publicación con imágenes — `201 Created`**
 
