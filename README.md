@@ -53,7 +53,7 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 - [x] Implementar controlador de publicaciones
 - [x] Implementar controlador de comentarios
 - [x] Registrar rutas API
-- [ ] Implementar almacenamiento y eliminación de imágenes
+- [x] Implementar almacenamiento y eliminación de imágenes
 - [ ] Validar y exportar la colección de Postman
 - [ ] Completar la documentación y evidencias
 
@@ -101,14 +101,14 @@ Las pruebas de relaciones usan SQLite en memoria, sin cambiar la base local del 
 
 | Método | Ruta | Descripción | Respuesta exitosa |
 |---|---|---|---:|
-| `POST` | `/api/posts` | Crea una publicación con título y contenido | `201` |
+| `POST` | `/api/posts` | Crea una publicación con título, contenido e imágenes opcionales (`images[]`, multipart/form-data) | `201` |
 | `GET` | `/api/posts` | Lista publicaciones paginadas con comentarios e imágenes | `200` |
 | `GET` | `/api/posts/{id}` | Consulta una publicación con sus relaciones | `200` |
 | `POST` | `/api/posts/{id}/comments` | Agrega un comentario | `201` |
 | `POST` | `/api/posts/{id}/like` | Incrementa el contador de Me gusta | `200` |
 | `DELETE` | `/api/posts/{id}` | Elimina una publicación | `204` |
 
-Los controladores de publicaciones y comentarios usan Form Requests. Las validaciones fallidas responden `422` y los recursos inexistentes `404`. La lista está paginada (15 registros por página). La carga física de imágenes y su aceptación al crear publicaciones se implementarán en la fase de almacenamiento.
+Los controladores de publicaciones y comentarios usan Form Requests. Las validaciones fallidas responden `422` y los recursos inexistentes `404`. La lista está paginada (15 registros por página). Se admiten hasta 10 imágenes por solicitud de creación, en formatos JPEG, PNG, GIF o WebP, con un máximo de 5 MB cada una. Laravel guarda los archivos en `storage/app/public/posts`; `image_path` contiene una ruta relativa que se puede servir bajo `/storage/`. Al eliminar una publicación se eliminan sus archivos y registros relacionados.
 
 ## Evidencias de funcionamiento
 
@@ -182,6 +182,14 @@ Las pruebas ahora invocan las rutas reales registradas en `routes/api.php`; se v
 ```sh
 docker compose exec app php artisan route:list --path=api
 docker compose exec app php artisan test
+```
+
+### Fase 10: almacenamiento y eliminación de imágenes
+
+La prueba de `POST /api/posts` carga dos imágenes de prueba, verifica sus registros y archivos en el disco público. Otra prueba confirma que `DELETE /api/posts/{id}` elimina el archivo y sus datos asociados. Se rechazan formatos que no sean imagen.
+
+```sh
+docker compose exec app php artisan test --filter=PostControllerTest
 ```
 
 ### Fase 6: modelos y relaciones Eloquent

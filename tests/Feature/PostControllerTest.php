@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PostControllerTest extends TestCase
@@ -37,6 +39,46 @@ class PostControllerTest extends TestCase
             ->assertJsonValidationErrors(['title', 'content']);
     }
 
+    public function test_store_persists_multiple_images_for_a_post(): void
+    {
+        Storage::fake('public');
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pR8AAAAASUVORK5CYII=', true);
+
+        $response = $this->post('/api/posts', [
+            'title' => 'Publicación con imágenes',
+            'content' => 'Contenido de prueba',
+            'images' => [
+                UploadedFile::fake()->createWithContent('first.png', $png),
+                UploadedFile::fake()->createWithContent('second.png', $png),
+            ],
+        ], ['Accept' => 'application/json']);
+
+        $response
+            ->assertCreated()
+            ->assertJsonCount(2, 'images')
+            ->assertJsonPath('images.0.image_path', fn (string $path): bool => str_starts_with($path, 'posts/'))
+            ->assertJsonPath('images.1.image_path', fn (string $path): bool => str_starts_with($path, 'posts/'));
+
+        $this->assertDatabaseCount('post_images', 2);
+
+        foreach ($response->json('images') as $image) {
+            Storage::disk('public')->assertExists($image['image_path']);
+        }
+    }
+
+    public function test_store_rejects_non_image_uploads(): void
+    {
+        $this->post('/api/posts', [
+            'title' => 'Publicación de prueba',
+            'content' => 'Contenido de prueba',
+            'images' => [
+                UploadedFile::fake()->create('document.pdf', 10, 'application/pdf'),
+            ],
+        ], ['Accept' => 'application/json'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['images.0']);
+    }
+
     public function test_index_and_show_include_post_relations(): void
     {
         $post = Post::create([
@@ -66,15 +108,22 @@ class PostControllerTest extends TestCase
 
     public function test_destroy_returns_no_content_and_deletes_post(): void
     {
+        Storage::fake('public');
+
         $post = Post::create([
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
         ]);
+        Storage::disk('public')->put('posts/example.png', 'fake image content');
+        $imagePath = 'posts/example.png';
+        $post->images()->create(['image_path' => $imagePath]);
 
         $this->deleteJson("/api/posts/{$post->id}")
             ->assertNoContent();
 
         $this->assertDatabaseMissing('posts', ['id' => $post->id]);
+        $this->assertDatabaseMissing('post_images', ['image_path' => $imagePath]);
+        Storage::disk('public')->assertMissing($imagePath);
     }
 
     public function test_show_returns_not_found_for_missing_post(): void
