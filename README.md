@@ -48,7 +48,7 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 - [x] Configurar SQLite
 - [x] Crear migración de publicaciones
 - [x] Crear migración de comentarios
-- [ ] Crear migración de imágenes
+- [x] Crear migración de imágenes
 - [ ] Configurar modelos y relaciones Eloquent
 - [ ] Implementar controladores, validación y rutas REST
 - [ ] Implementar almacenamiento y eliminación de imágenes
@@ -57,22 +57,37 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 
 ## Modelo de datos y diagrama relacional
 
-Diagrama parcial (se completará al agregar imágenes):
+Diagrama relacional:
 
 ```text
-posts                         comments
------                         --------
-id (PK) <-------------------- post_id (FK, CASCADE)
-title                         id (PK)
-content                       author
-likes_count                   content
-created_at                    created_at
-updated_at                    updated_at
+                    +--------------------+
+                    |       posts        |
+                    +--------------------+
+                    | id (PK)            |
+                    | title              |
+                    | content            |
+                    | likes_count        |
+                    | created_at         |
+                    | updated_at         |
+                    +--------------------+
+                       ^              ^
+                       |              |
+          post_id (FK, CASCADE)  post_id (FK, CASCADE)
+                       |              |
+          +------------------+  +---------------------+
+          |     comments     |  |     post_images    |
+          +------------------+  +---------------------+
+          | id (PK)          |  | id (PK)            |
+          | author           |  | image_path         |
+          | content          |  | created_at         |
+          | created_at       |  | updated_at         |
+          | updated_at       |  +---------------------+
+          +------------------+
 ```
 
 ## Migraciones, modelos y relaciones
 
-Las migraciones `create_posts_table` y `create_comments_table` definen sus respectivos campos. La clave foránea `comments.post_id` referencia `posts.id` y elimina los comentarios asociados al borrar su publicación. Las relaciones Eloquent se implementarán en su fase.
+Las migraciones `create_posts_table`, `create_comments_table` y `create_post_images_table` definen sus respectivos campos. `comments.post_id` y `post_images.post_id` referencian `posts.id` y eliminan sus registros asociados al borrar una publicación. Las relaciones Eloquent se implementarán en su fase.
 
 ## Endpoints
 
@@ -108,6 +123,15 @@ La tabla `comments` incluye `id`, `post_id`, `author`, `content` y marcas de tie
 ```sh
 docker compose exec app php artisan migrate:status
 docker compose exec app php artisan db:table comments
+```
+
+### Fase 5: migración de imágenes
+
+La tabla `post_images` incluye `id`, `post_id`, `image_path` y marcas de tiempo. `post_id` referencia `posts.id` con borrado en cascada. Verifica el esquema con:
+
+```sh
+docker compose exec app php artisan migrate:status
+docker compose exec app php artisan db:table post_images
 ```
 
 ### Fase 2: SQLite
