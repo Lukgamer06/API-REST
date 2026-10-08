@@ -296,6 +296,32 @@ El correo recibido incluye:
 - título de la publicación
 - contenido del comentario
 
+## Fase 6: versionado de la API
+
+La API quedó versionada con prefijo `v1` para preparar evoluciones futuras. Las rutas principales se exponen en `/api/v1` y el proyecto mantiene compatibilidad con las rutas legacy bajo `/api` durante la transición.
+
+Ejemplos:
+
+```http
+GET {{baseUrl}}/api/v1/posts
+GET {{baseUrl}}/api/v1/posts/1
+POST {{baseUrl}}/api/v1/register
+POST {{baseUrl}}/api/v1/login
+POST {{baseUrl}}/api/v1/posts
+POST {{baseUrl}}/api/v1/posts/1/comments
+POST {{baseUrl}}/api/v1/posts/1/like
+```
+
+El enrutado quedó agrupado con:
+
+```php
+Route::prefix('v1')->group(function () {
+    // rutas públicas y protegidas
+});
+```
+
+Esto permite mantener versiones futuras como `v1`, `v2` sin mezclar contratos incompatibles.
+
 ### Respuestas JSON verificadas
 
 **Crear publicación — `201 Created`**

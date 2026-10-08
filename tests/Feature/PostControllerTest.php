@@ -290,4 +290,22 @@ class PostControllerTest extends TestCase
             ->assertJsonPath('total', 1)
             ->assertJsonPath('data.0.content', 'La universidad ofrece clases interesantes.');
     }
+
+    public function test_v1_routes_are_available_for_api_versioning(): void
+    {
+        $this->user->posts()->create([
+            'title' => 'Versión v1',
+            'content' => 'Ruta versionada',
+        ]);
+
+        $this->getJson('/api/v1/posts')
+            ->assertOk()
+            ->assertJsonStructure([
+                'current_page',
+                'data',
+                'last_page',
+                'per_page',
+                'total',
+            ]);
+    }
 }
