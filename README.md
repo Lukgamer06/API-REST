@@ -51,7 +51,7 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 - [x] Crear migración de imágenes
 - [x] Configurar modelos y relaciones Eloquent
 - [x] Implementar controlador de publicaciones
-- [ ] Implementar controlador de comentarios
+- [x] Implementar controlador de comentarios
 - [ ] Registrar rutas API
 - [ ] Implementar almacenamiento y eliminación de imágenes
 - [ ] Validar y exportar la colección de Postman
@@ -99,7 +99,7 @@ Las pruebas de relaciones usan SQLite en memoria, sin cambiar la base local del 
 
 ## Endpoints
 
-Las rutas de producción se registrarán en la siguiente fase. El controlador de publicaciones usa `StorePostRequest` para validar título y contenido, devuelve `201` al crear, `200` al consultar y `204` al eliminar. La lista está paginada (15 registros por página) e incluye comentarios e imágenes.
+Las rutas de producción se registrarán en la siguiente fase. Los controladores de publicaciones y comentarios usan Form Requests, devuelven `201` al crear, `200` al consultar y `204` al eliminar. Las validaciones fallidas responden `422` y los recursos inexistentes `404`. La lista de publicaciones está paginada (15 registros por página) e incluye comentarios e imágenes.
 
 ## Evidencias de funcionamiento
 
@@ -156,6 +156,14 @@ Pruebas del controlador: creación (`201`), validación (`422`), listado y consu
 
 ```sh
 docker compose exec app php artisan test --filter=PostControllerTest
+```
+
+### Fase 8: controlador de comentarios
+
+`StoreCommentRequest` valida `author` (requerido, máximo 255 caracteres) y `content` (requerido). Las pruebas verifican la creación (`201`), errores de validación (`422`) y publicación inexistente (`404`).
+
+```sh
+docker compose exec app php artisan test --filter=CommentControllerTest
 ```
 
 ### Fase 6: modelos y relaciones Eloquent
