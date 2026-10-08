@@ -32,6 +32,13 @@ class PostController extends Controller
         return response()->json($post->load(['images', 'comments']));
     }
 
+    public function like(Post $post): JsonResponse
+    {
+        $post->increment('likes_count');
+
+        return response()->json($post->refresh()->load(['images', 'comments']));
+    }
+
     public function destroy(Post $post): Response
     {
         $post->delete();

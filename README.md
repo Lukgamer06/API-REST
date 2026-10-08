@@ -52,7 +52,7 @@ En Linux con SELinux, el montaje del código usa una etiqueta privada para permi
 - [x] Configurar modelos y relaciones Eloquent
 - [x] Implementar controlador de publicaciones
 - [x] Implementar controlador de comentarios
-- [ ] Registrar rutas API
+- [x] Registrar rutas API
 - [ ] Implementar almacenamiento y eliminación de imágenes
 - [ ] Validar y exportar la colección de Postman
 - [ ] Completar la documentación y evidencias
@@ -99,7 +99,16 @@ Las pruebas de relaciones usan SQLite en memoria, sin cambiar la base local del 
 
 ## Endpoints
 
-Las rutas de producción se registrarán en la siguiente fase. Los controladores de publicaciones y comentarios usan Form Requests, devuelven `201` al crear, `200` al consultar y `204` al eliminar. Las validaciones fallidas responden `422` y los recursos inexistentes `404`. La lista de publicaciones está paginada (15 registros por página) e incluye comentarios e imágenes.
+| Método | Ruta | Descripción | Respuesta exitosa |
+|---|---|---|---:|
+| `POST` | `/api/posts` | Crea una publicación con título y contenido | `201` |
+| `GET` | `/api/posts` | Lista publicaciones paginadas con comentarios e imágenes | `200` |
+| `GET` | `/api/posts/{id}` | Consulta una publicación con sus relaciones | `200` |
+| `POST` | `/api/posts/{id}/comments` | Agrega un comentario | `201` |
+| `POST` | `/api/posts/{id}/like` | Incrementa el contador de Me gusta | `200` |
+| `DELETE` | `/api/posts/{id}` | Elimina una publicación | `204` |
+
+Los controladores de publicaciones y comentarios usan Form Requests. Las validaciones fallidas responden `422` y los recursos inexistentes `404`. La lista está paginada (15 registros por página). La carga física de imágenes y su aceptación al crear publicaciones se implementarán en la fase de almacenamiento.
 
 ## Evidencias de funcionamiento
 
@@ -164,6 +173,15 @@ docker compose exec app php artisan test --filter=PostControllerTest
 
 ```sh
 docker compose exec app php artisan test --filter=CommentControllerTest
+```
+
+### Fase 9: rutas API
+
+Las pruebas ahora invocan las rutas reales registradas en `routes/api.php`; se verifica también el endpoint de Me gusta (`POST /api/posts/{id}/like`).
+
+```sh
+docker compose exec app php artisan route:list --path=api
+docker compose exec app php artisan test
 ```
 
 ### Fase 6: modelos y relaciones Eloquent

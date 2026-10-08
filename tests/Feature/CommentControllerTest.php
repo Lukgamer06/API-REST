@@ -2,26 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\Api\CommentController;
 use App\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class CommentControllerTest extends TestCase
 {
     use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Route::middleware('api')
-            ->prefix('__test-api/posts/{post}/comments')
-            ->group(function (): void {
-                Route::post('/', [CommentController::class, 'store']);
-            });
-    }
 
     public function test_store_creates_comment_for_post_and_returns_created_status(): void
     {
@@ -30,7 +17,7 @@ class CommentControllerTest extends TestCase
             'content' => 'Contenido de prueba',
         ]);
 
-        $this->postJson("/__test-api/posts/{$post->id}/comments", [
+        $this->postJson("/api/posts/{$post->id}/comments", [
             'author' => 'Ana',
             'content' => 'Buen aporte',
         ])
@@ -53,14 +40,14 @@ class CommentControllerTest extends TestCase
             'content' => 'Contenido de prueba',
         ]);
 
-        $this->postJson("/__test-api/posts/{$post->id}/comments", [])
+        $this->postJson("/api/posts/{$post->id}/comments", [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['author', 'content']);
     }
 
     public function test_store_returns_not_found_for_missing_post(): void
     {
-        $this->postJson('/__test-api/posts/999999/comments', [
+        $this->postJson('/api/posts/999999/comments', [
             'author' => 'Ana',
             'content' => 'Buen aporte',
         ])->assertNotFound();

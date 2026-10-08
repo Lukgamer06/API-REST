@@ -2,31 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\Api\PostController;
 use App\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class PostControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Route::middleware('api')->prefix('__test-api/posts')->group(function (): void {
-            Route::get('/', [PostController::class, 'index']);
-            Route::post('/', [PostController::class, 'store']);
-            Route::get('/{post}', [PostController::class, 'show']);
-            Route::delete('/{post}', [PostController::class, 'destroy']);
-        });
-    }
-
     public function test_store_creates_post_and_returns_created_status(): void
     {
-        $response = $this->postJson('/__test-api/posts', [
+        $response = $this->postJson('/api/posts', [
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
         ]);
@@ -46,7 +32,7 @@ class PostControllerTest extends TestCase
 
     public function test_store_validates_required_post_fields(): void
     {
-        $this->postJson('/__test-api/posts', [])
+        $this->postJson('/api/posts', [])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['title', 'content']);
     }
@@ -65,13 +51,13 @@ class PostControllerTest extends TestCase
             'image_path' => 'posts/example.jpg',
         ]);
 
-        $this->getJson('/__test-api/posts')
+        $this->getJson('/api/posts')
             ->assertOk()
             ->assertJsonPath('data.0.id', $post->id)
             ->assertJsonPath('data.0.comments.0.author', 'Ana')
             ->assertJsonPath('data.0.images.0.image_path', 'posts/example.jpg');
 
-        $this->getJson("/__test-api/posts/{$post->id}")
+        $this->getJson("/api/posts/{$post->id}")
             ->assertOk()
             ->assertJsonPath('id', $post->id)
             ->assertJsonPath('comments.0.author', 'Ana')
@@ -85,7 +71,7 @@ class PostControllerTest extends TestCase
             'content' => 'Contenido de prueba',
         ]);
 
-        $this->deleteJson("/__test-api/posts/{$post->id}")
+        $this->deleteJson("/api/posts/{$post->id}")
             ->assertNoContent();
 
         $this->assertDatabaseMissing('posts', ['id' => $post->id]);
@@ -93,6 +79,24 @@ class PostControllerTest extends TestCase
 
     public function test_show_returns_not_found_for_missing_post(): void
     {
-        $this->getJson('/__test-api/posts/999999')->assertNotFound();
+        $this->getJson('/api/posts/999999')->assertNotFound();
+    }
+
+    public function test_like_increments_likes_count_and_returns_updated_post(): void
+    {
+        $post = Post::create([
+            'title' => 'Publicación de prueba',
+            'content' => 'Contenido de prueba',
+        ]);
+
+        $this->postJson("/api/posts/{$post->id}/like")
+            ->assertOk()
+            ->assertJsonPath('id', $post->id)
+            ->assertJsonPath('likes_count', 1);
+
+        $this->assertDatabaseHas('posts', [
+            'id' => $post->id,
+            'likes_count' => 1,
+        ]);
     }
 }
