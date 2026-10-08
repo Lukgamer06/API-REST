@@ -131,6 +131,40 @@ Para Postman:
 
 El usuario de la sesión es la fuente de identidad para `posts.user_id`, `comments.user_id` y el `author` de cada comentario; no se acepta que el cliente asigne otro propietario.
 
+## Fase 2: paginación
+
+Se aplica `paginate(10)` en `GET /api/posts` para mantener respuestas predecibles y paginadas. La API devuelve un payload estándar de Laravel con `data`, `current_page`, `last_page`, `per_page`, `total` y enlaces de navegación.
+
+Ejemplo de respuesta:
+
+```json
+{
+  "current_page": 1,
+  "data": [
+    {
+      "id": 5,
+      "title": "Publicación 5",
+      "content": "Contenido de ejemplo",
+      "likes_count": 0,
+      "created_at": "2026-10-08T12:00:00.000000Z",
+      "updated_at": "2026-10-08T12:00:00.000000Z"
+    }
+  ],
+  "first_page_url": "http://localhost:8000/api/posts?page=1",
+  "from": 1,
+  "last_page": 2,
+  "last_page_url": "http://localhost:8000/api/posts?page=2",
+  "next_page_url": "http://localhost:8000/api/posts?page=2",
+  "path": "http://localhost:8000/api/posts",
+  "per_page": 10,
+  "prev_page_url": null,
+  "to": 10,
+  "total": 15
+}
+```
+
+Verificación con Postman: `GET {{baseUrl}}/api/posts?page=1` y `GET {{baseUrl}}/api/posts?page=2`.
+
 ## Endpoints
 
 Todas las rutas están bajo `/api`. Las respuestas de validación se entregan como JSON al incluir `Accept: application/json`.
@@ -190,6 +224,42 @@ docker compose exec app vendor/bin/pint --test
 Suite del taller inicial: **17 pruebas, 70 aserciones**. La colección inicial de Postman se ejecutó con Newman: **11 solicitudes, 13 aserciones, 0 fallos**. En la Fase avanzada 1, las pruebas ampliadas validan registro, login, revocación, Bearer Token, protección de endpoints, asociación con usuario autenticado y autorización de borrado.
 
 **Regresión de la Fase avanzada 1:** PHPUnit aprobó **29 pruebas y 114 aserciones**; Pint aprobó **46 archivos PHP**; Newman completó **14 solicitudes y 16 aserciones sin fallos**. Las 8 migraciones están aplicadas y las 9 rutas API están registradas.
+
+## Fase 3: sistema de likes profesional
+
+Se reemplaza el contador simple `likes_count` por una relación muchos a muchos entre `posts` y `users` a través de `post_user`, con `unique(post_id, user_id)` para impedir duplicados. La cantidad real de likes se calcula con `post->likedByUsers()->count()`. El endpoint exige autenticación y responde `409 Conflict` si el usuario ya dio like.
+
+Ejemplo de prueba en Postman:
+
+```http
+POST {{baseUrl}}/api/posts/1/like
+Authorization: Bearer {{token}}
+```
+
+Respuesta exitosa:
+
+```json
+{
+  "message": "Like registrado correctamente.",
+  "likes_count": 1,
+  "post": {
+    "id": 1,
+    "title": "Publicación de prueba",
+    "content": "Contenido de prueba",
+    "likes_count": 0,
+    "comments": [],
+    "images": []
+  }
+}
+```
+
+Respuesta duplicada:
+
+```json
+{
+  "message": "Ya has dado like a esta publicación."
+}
+```
 
 ### Respuestas JSON verificadas
 

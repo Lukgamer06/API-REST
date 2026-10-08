@@ -16,12 +16,20 @@ use Throwable;
 
 class PostController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $search = trim((string) $request->query('search', ''));
+
         $posts = Post::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($innerQuery) use ($search) {
+                    $innerQuery->where('title', 'like', "%{$search}%")
+                        ->orWhere('content', 'like', "%{$search}%");
+                });
+            })
             ->with(['images', 'comments'])
             ->latest()
-            ->paginate(15);
+            ->paginate(10);
 
         return response()->json($posts);
     }
@@ -70,11 +78,24 @@ class PostController extends Controller
         return response()->json($post->load(['images', 'comments']));
     }
 
-    public function like(Post $post): JsonResponse
+    public function like(Request $request, Post $post): JsonResponse
     {
-        $post->increment('likes_count');
+        $user = $request->user();
 
-        return response()->json($post->refresh()->load(['images', 'comments']));
+        if ($post->likedByUsers()->whereKey($user->id)->exists()) {
+            return response()->json([
+                'message' => 'Ya has dado like a esta publicación.',
+            ], 409);
+        }
+
+        $post->likedByUsers()->attach($user->id);
+        $post->refresh();
+
+        return response()->json([
+            'message' => 'Like registrado correctamente.',
+            'likes_count' => $post->likedByUsers()->count(),
+            'post' => $post->load(['images', 'comments']),
+        ]);
     }
 
     public function destroy(Request $request, Post $post): Response

@@ -151,7 +151,28 @@ class PostControllerTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.0.id', $post->id)
             ->assertJsonPath('data.0.comments.0.author', 'Ana')
-            ->assertJsonPath('data.0.images.0.image_path', 'posts/example.jpg');
+            ->assertJsonPath('data.0.images.0.image_path', 'posts/example.jpg')
+            ->assertJsonPath('per_page', 10)
+            ->assertJsonPath('current_page', 1)
+            ->assertJsonStructure([
+                'current_page',
+                'data',
+                'first_page_url',
+                'from',
+                'last_page',
+                'last_page_url',
+                'links',
+                'next_page_url',
+                'path',
+                'per_page',
+                'prev_page_url',
+                'to',
+                'total',
+            ]);
+
+        $this->getJson('/api/posts?search=prueba')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $post->id);
 
         $this->getJson("/api/posts/{$post->id}")
             ->assertOk()
@@ -224,7 +245,7 @@ class PostControllerTest extends TestCase
         $this->getJson('/api/posts/999999')->assertNotFound();
     }
 
-    public function test_like_increments_likes_count_and_returns_updated_post(): void
+    public function test_like_registers_real_like_and_prevents_duplicates(): void
     {
         $post = Post::create([
             'title' => 'Publicación de prueba',
@@ -233,12 +254,40 @@ class PostControllerTest extends TestCase
 
         $this->postJson("/api/posts/{$post->id}/like")
             ->assertOk()
-            ->assertJsonPath('id', $post->id)
-            ->assertJsonPath('likes_count', 1);
+            ->assertJsonPath('likes_count', 1)
+            ->assertJsonPath('post.id', $post->id);
 
-        $this->assertDatabaseHas('posts', [
-            'id' => $post->id,
-            'likes_count' => 1,
+        $this->assertDatabaseHas('post_user', [
+            'post_id' => $post->id,
+            'user_id' => $this->user->id,
         ]);
+
+        $this->postJson("/api/posts/{$post->id}/like")
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Ya has dado like a esta publicación.');
+
+        $this->assertDatabaseCount('post_user', 1);
+    }
+
+    public function test_index_supports_search_in_title_and_content_with_pagination(): void
+    {
+        $this->user->posts()->create([
+            'title' => 'Viaje a Japón',
+            'content' => 'Las mejores experiencias del recorrido.',
+        ]);
+        $this->user->posts()->create([
+            'title' => 'Trabajo del curso',
+            'content' => 'La universidad ofrece clases interesantes.',
+        ]);
+
+        $this->getJson('/api/posts?search=viaje')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.title', 'Viaje a Japón');
+
+        $this->getJson('/api/posts?search=universidad')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.content', 'La universidad ofrece clases interesantes.');
     }
 }
