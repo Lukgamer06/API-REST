@@ -17,6 +17,7 @@ class PostControllerTest extends TestCase
         $response = $this->postJson('/api/posts', [
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
+            'likes_count' => 999,
         ]);
 
         $response
@@ -77,6 +78,47 @@ class PostControllerTest extends TestCase
         ], ['Accept' => 'application/json'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['images.0']);
+
+        $this->assertDatabaseCount('posts', 0);
+        $this->assertDatabaseCount('post_images', 0);
+    }
+
+    public function test_store_rejects_more_than_ten_images(): void
+    {
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pR8AAAAASUVORK5CYII=', true);
+
+        $this->post('/api/posts', [
+            'title' => 'Publicación de prueba',
+            'content' => 'Contenido de prueba',
+            'images' => array_map(
+                fn (int $index): UploadedFile => UploadedFile::fake()->createWithContent("image-{$index}.png", $png),
+                range(1, 11),
+            ),
+        ], ['Accept' => 'application/json'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['images']);
+
+        $this->assertDatabaseCount('posts', 0);
+        $this->assertDatabaseCount('post_images', 0);
+    }
+
+    public function test_store_rejects_images_larger_than_five_megabytes(): void
+    {
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pR8AAAAASUVORK5CYII=', true);
+        $oversizedPng = $png.str_repeat('x', (5 * 1024 * 1024) + 1 - strlen($png));
+
+        $this->post('/api/posts', [
+            'title' => 'Publicación de prueba',
+            'content' => 'Contenido de prueba',
+            'images' => [
+                UploadedFile::fake()->createWithContent('oversized.png', $oversizedPng),
+            ],
+        ], ['Accept' => 'application/json'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['images.0']);
+
+        $this->assertDatabaseCount('posts', 0);
+        $this->assertDatabaseCount('post_images', 0);
     }
 
     public function test_index_and_show_include_post_relations(): void
@@ -114,16 +156,22 @@ class PostControllerTest extends TestCase
             'title' => 'Publicación de prueba',
             'content' => 'Contenido de prueba',
         ]);
-        Storage::disk('public')->put('posts/example.png', 'fake image content');
-        $imagePath = 'posts/example.png';
-        $post->images()->create(['image_path' => $imagePath]);
+        $imagePaths = ['posts/first.png', 'posts/second.png'];
+
+        foreach ($imagePaths as $imagePath) {
+            Storage::disk('public')->put($imagePath, 'fake image content');
+            $post->images()->create(['image_path' => $imagePath]);
+        }
 
         $this->deleteJson("/api/posts/{$post->id}")
             ->assertNoContent();
 
         $this->assertDatabaseMissing('posts', ['id' => $post->id]);
-        $this->assertDatabaseMissing('post_images', ['image_path' => $imagePath]);
-        Storage::disk('public')->assertMissing($imagePath);
+
+        foreach ($imagePaths as $imagePath) {
+            $this->assertDatabaseMissing('post_images', ['image_path' => $imagePath]);
+            Storage::disk('public')->assertMissing($imagePath);
+        }
     }
 
     public function test_show_returns_not_found_for_missing_post(): void

@@ -149,7 +149,7 @@ docker compose exec app php artisan test
 docker compose exec app vendor/bin/pint --test
 ```
 
-Última suite automatizada registrada: **15 pruebas, 56 aserciones**, todas aprobadas. La colección de Postman se ejecutó con Newman: **11 solicitudes, 13 aserciones, 0 fallos**.
+Última suite automatizada registrada: **17 pruebas, 70 aserciones**, todas aprobadas. Pint valida los **40 archivos PHP**. La colección de Postman se ejecutó con Newman: **11 solicitudes, 13 aserciones, 0 fallos**.
 
 ### Respuestas JSON verificadas
 
@@ -194,6 +194,19 @@ docker compose exec app vendor/bin/pint --test
 ```
 
 Para evidencias visuales de Postman Desktop, guarda capturas del Runner y de las respuestas en `postman/evidence/`. Los archivos para importar, el fixture y los resultados del runner Newman están versionados; Newman no reemplaza una captura de la interfaz de Postman.
+
+### Correcciones finales y regresión
+
+La suite cubre errores `404` y `422`, prevención de cambios del contador desde el request, el máximo de 10 imágenes, el tamaño máximo de 5 MB, carga múltiple y eliminación de varios archivos. Se corrigieron también los cuatro problemas de formato encontrados en el esqueleto original.
+
+```text
+PHPUnit: 17 pruebas aprobadas, 70 aserciones
+Pint: 40 archivos aprobados
+Newman: 11 solicitudes, 13 aserciones, 0 fallos
+API: 6 rutas registradas
+SQLite: todas las migraciones aplicadas
+HTTP: 200
+```
 
 ## Historial de commits
 
