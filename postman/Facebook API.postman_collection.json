@@ -67,13 +67,64 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/register",
+          "raw": "{{baseUrl}}/api/v1/register",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "register"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Rechazar credenciales incorrectas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('El login rechaza credenciales incorrectas con 401', function () {",
+              "    pm.response.to.have.status(401);",
+              "    pm.expect(pm.response.json().message).to.eql('Las credenciales proporcionadas no son válidas.');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{authEmail}}\",\n  \"password\": \"incorrect-password\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "login"
           ]
         }
       }
@@ -119,12 +170,13 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/login",
+          "raw": "{{baseUrl}}/api/v1/login",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "login"
           ]
         }
@@ -170,12 +222,13 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/posts",
+          "raw": "{{baseUrl}}/api/v1/posts",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "posts"
           ]
         }
@@ -212,12 +265,13 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/posts",
+          "raw": "{{baseUrl}}/api/v1/posts",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "posts"
           ]
         }
@@ -248,12 +302,13 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/posts/{{postId}}",
+          "raw": "{{baseUrl}}/api/v1/posts/{{postId}}",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "posts",
             "{{postId}}"
           ]
@@ -297,12 +352,65 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/posts/{{postId}}/comments",
+          "raw": "{{baseUrl}}/api/v1/posts/{{postId}}/comments",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
+            "posts",
+            "{{postId}}",
+            "comments"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Validar contenido del comentario",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Un comentario sin contenido responde 422', function () {",
+              "    pm.response.to.have.status(422);",
+              "    pm.expect(pm.response.json().errors).to.have.property('content');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/posts/{{postId}}/comments",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
             "posts",
             "{{postId}}",
             "comments"
@@ -320,9 +428,9 @@
             "exec": [
               "pm.test('Responde 200 y el contador aumenta', function () {",
               "    pm.response.to.have.status(200);",
-              "    const post = pm.response.json();",
-              "    pm.expect(post.id).to.eql(Number(pm.environment.get('postId')));",
-              "    pm.expect(post.likes_count).to.eql(1);",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.likes_count).to.eql(1);",
+              "    pm.expect(body.post.id).to.eql(Number(pm.environment.get('postId')));",
               "});"
             ]
           }
@@ -337,12 +445,52 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/posts/{{postId}}/like",
+          "raw": "{{baseUrl}}/api/v1/posts/{{postId}}/like",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
+            "posts",
+            "{{postId}}",
+            "like"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Rechazar Me gusta duplicado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Un segundo like del mismo usuario responde 409', function () {",
+              "    pm.response.to.have.status(409);",
+              "    pm.expect(pm.response.json().message).to.eql('Ya has dado like a esta publicación.');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/posts/{{postId}}/like",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
             "posts",
             "{{postId}}",
             "like"
@@ -405,12 +553,13 @@
           ]
         },
         "url": {
-          "raw": "{{baseUrl}}/api/posts",
+          "raw": "{{baseUrl}}/api/v1/posts",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "posts"
           ]
         }
@@ -483,12 +632,13 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/posts",
+          "raw": "{{baseUrl}}/api/v1/posts",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "posts"
           ]
         }
@@ -540,12 +690,13 @@
           ]
         },
         "url": {
-          "raw": "{{baseUrl}}/api/posts",
+          "raw": "{{baseUrl}}/api/v1/posts",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "posts"
           ]
         }
@@ -576,12 +727,13 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/posts/{{imagePostId}}",
+          "raw": "{{baseUrl}}/api/v1/posts/{{imagePostId}}",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "posts",
             "{{imagePostId}}"
           ]
@@ -613,12 +765,13 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/posts/{{postId}}",
+          "raw": "{{baseUrl}}/api/v1/posts/{{postId}}",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "posts",
             "{{postId}}"
           ]
@@ -650,13 +803,115 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/logout",
+          "raw": "{{baseUrl}}/api/v1/logout",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
+            "v1",
             "logout"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Rechazar publicación sin autenticación",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Crear publicación sin token responde 401', function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"No debe crearse\",\n  \"content\": \"La petición no incluye token.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/posts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "posts"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Rechazar token revocado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Un token tras logout no puede crear publicaciones', function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"No debe crearse\",\n  \"content\": \"El token ya fue revocado.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/posts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "posts"
           ]
         }
       }

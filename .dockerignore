@@ -4,6 +4,11 @@
 !.env.example
 vendor
 node_modules
+database/*.sqlite
+database/*.sqlite-*
+public/build
+public/hot
+public/storage
 storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*

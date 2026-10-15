@@ -8,7 +8,7 @@ Desarrollar una API REST académica tipo Facebook con Laravel 11, enfocada en pu
 
 - PHP 8.3
 - Laravel 11
-- SQLite
+- SQLite local / PostgreSQL en Render
 - Laravel Sanctum
 - Docker + Docker Compose
 - Postman + Newman
@@ -56,15 +56,42 @@ http://localhost:8000
 http://localhost:8000/docs
 ```
 
+## Despliegue en Render
+
+El repositorio incluye [`render.yaml`](./render.yaml), que define la aplicación
+Docker, PostgreSQL, las variables de entorno y la persistencia de las imágenes.
+
+1. Sube el repositorio a GitHub y, en Render, selecciona **New > Blueprint**.
+2. Conecta el repositorio y confirma la creación de los recursos declarados en
+   `render.yaml`.
+3. Render genera `APP_KEY`, construye la imagen y ejecuta
+   `php artisan migrate --force` antes de cada despliegue.
+4. Cuando termine el primer despliegue, verifica `/up` en la URL asignada por
+   Render y prueba los endpoints bajo `/api/v1`.
+
+La configuración usa instancias de pago (`starter` para la aplicación,
+`basic-256mb` para PostgreSQL) y un disco persistente de 1 GB para las imágenes.
+Render requiere una instancia compatible con discos persistentes; un despliegue
+gratuito sin disco perdería los archivos subidos al reiniciar o volver a
+desplegar. La base PostgreSQL mantiene los datos de la aplicación entre
+despliegues. Puedes cambiar la región y los planes en `render.yaml` antes de
+crear el Blueprint.
+
+No guardes `APP_KEY`, contraseñas ni URLs de conexión en el repositorio. El
+Blueprint genera `APP_KEY` y Render enlaza `DB_URL` de forma privada con la base
+de datos. `APP_URL` utiliza `RENDER_EXTERNAL_URL` automáticamente.
+
 ## Base de datos y SQLite
 
-El proyecto usa SQLite como base de datos local. La base se almacena en:
+En desarrollo local el proyecto usa SQLite. La base se almacena en:
 
 ```text
 database/database.sqlite
 ```
 
-Laravel usa por defecto ese archivo y el contenedor crea la DB automáticamente si no existe.
+Laravel usa ese archivo por defecto y el contenedor local lo crea si no existe.
+En Render se usa PostgreSQL; no configures SQLite para producción porque el
+filesystem de una instancia web no es persistente.
 
 ## Diagrama relacional
 
@@ -260,6 +287,30 @@ Todos los endpoints están protegidos o versionados bajo `/api/v1`.
 | POST | `/api/v1/posts/{id}/like` | Dar like |
 
 ## Ejemplos de uso con Postman
+
+### Importar y ejecutar la colección
+
+1. Inicia la API local desde la raíz del repositorio:
+
+   ```bash
+   docker compose up --build -d
+   ```
+
+2. En Postman, importa `postman/Facebook API.postman_collection.json` y
+   `postman/Facebook API - Local.postman_environment.json`; selecciona el
+   entorno **Facebook API - Local**. `baseUrl` ya está configurado como
+   `http://localhost:8000`; no agregues `/api/v1`, porque la colección incluye
+   la versión en cada ruta.
+3. Abre **API REST Tipo Facebook > Run** y ejecuta los requests en el orden de
+   la colección. Incluye registro/login, posts, comentarios, imágenes, likes,
+   validaciones, borrado y revocación del token.
+4. Para las dos partes `images[]` del request **Crear publicación con varias
+   imágenes**, selecciona `postman/fixtures/sample.png`. Si Postman marca el
+   archivo como inaccesible, vuelve a seleccionarlo desde esa ruta local.
+
+La colección crea un usuario nuevo y modifica datos locales en cada ejecución;
+también crea y elimina publicaciones de prueba. Úsala contra una base de datos
+local de pruebas, no contra producción.
 
 ### 1. Registro
 
