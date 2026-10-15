@@ -27,4 +27,19 @@ class StoreCommentRequest extends FormRequest
             'content' => ['required', 'string'],
         ];
     }
+
+    /**
+     * Describe the fields used by Scribe's interactive request form.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'content' => [
+                'description' => 'Contenido del comentario. El autor se toma del usuario autenticado.',
+                'example' => 'Comentario de prueba desde la documentación.',
+            ],
+        ];
+    }
 }

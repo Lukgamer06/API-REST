@@ -26,6 +26,34 @@ class RegisterRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password_confirmation' => ['required', 'string', 'same:password'],
+        ];
+    }
+
+    /**
+     * Provide matching password examples for Scribe's interactive request form.
+     *
+     * @return array<string, array<string, string>>
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'name' => [
+                'description' => 'Nombre del usuario.',
+                'example' => 'Ana Postman',
+            ],
+            'email' => [
+                'description' => 'Correo único. Usa uno distinto si ya existe.',
+                'example' => 'ana.postman@example.test',
+            ],
+            'password' => [
+                'description' => 'Contraseña de al menos 8 caracteres.',
+                'example' => 'Password123!',
+            ],
+            'password_confirmation' => [
+                'description' => 'Debe ser idéntica a `password`.',
+                'example' => 'Password123!',
+            ],
         ];
     }
 }

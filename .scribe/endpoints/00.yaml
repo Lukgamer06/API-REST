@@ -12,7 +12,7 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'Registrar un usuario y obtener un token Bearer.'
       description: ''
       authenticated: false
       deprecated: false
@@ -27,9 +27,9 @@ endpoints:
       name:
         custom: []
         name: name
-        description: 'Must not be greater than 255 characters.'
+        description: 'Nombre del usuario. Must not be greater than 255 characters.'
         required: true
-        example: b
+        example: 'Ana Postman'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -38,9 +38,9 @@ endpoints:
       email:
         custom: []
         name: email
-        description: 'Must be a valid email address. Must not be greater than 255 characters.'
+        description: 'Correo único. Usa uno distinto si ya existe. Must be a valid email address. Must not be greater than 255 characters.'
         required: true
-        example: zbailey@example.net
+        example: ana.postman@example.test
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -49,18 +49,30 @@ endpoints:
       password:
         custom: []
         name: password
-        description: 'Must be at least 8 characters.'
+        description: 'Contraseña de al menos 8 caracteres. Must be at least 8 characters.'
         required: true
-        example: '-0pBNvYgxw'
+        example: Password123!
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      password_confirmation:
+        custom: []
+        name: password_confirmation
+        description: 'Debe ser idéntica a `password`. The value and <code>password</code> must match.'
+        required: true
+        example: Password123!
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
     cleanBodyParameters:
-      name: b
-      email: zbailey@example.net
-      password: '-0pBNvYgxw'
+      name: 'Ana Postman'
+      email: ana.postman@example.test
+      password: Password123!
+      password_confirmation: Password123!
     fileParameters: []
     responses: []
     responseFields: []
@@ -79,7 +91,7 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'Iniciar sesión y obtener un token Bearer.'
       description: ''
       authenticated: false
       deprecated: false
@@ -94,9 +106,9 @@ endpoints:
       email:
         custom: []
         name: email
-        description: 'Must be a valid email address.'
+        description: 'El mismo correo usado durante el registro. Must be a valid email address.'
         required: true
-        example: gbailey@example.net
+        example: ana.postman@example.test
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -105,17 +117,17 @@ endpoints:
       password:
         custom: []
         name: password
-        description: ''
+        description: 'La misma contraseña usada durante el registro.'
         required: true
-        example: '|]|{+-'
+        example: Password123!
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
     cleanBodyParameters:
-      email: gbailey@example.net
-      password: '|]|{+-'
+      email: ana.postman@example.test
+      password: Password123!
     fileParameters: []
     responses: []
     responseFields: []
@@ -134,7 +146,7 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'Listar publicaciones; opcionalmente filtrar por título o contenido.'
       description: ''
       authenticated: false
       deprecated: false
@@ -174,7 +186,7 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'Consultar una publicación existente.'
       description: ''
       authenticated: false
       deprecated: false
@@ -226,11 +238,12 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'Revocar el token de acceso actual.'
       description: ''
-      authenticated: false
+      authenticated: true
       deprecated: false
     headers:
+      Authorization: 'Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN'
       Content-Type: application/json
       Accept: application/json
     urlParameters: []
@@ -242,7 +255,10 @@ endpoints:
     fileParameters: []
     responses: []
     responseFields: []
-    auth: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
     controller: null
     method: null
     route: null
@@ -257,11 +273,12 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'Crear una publicación para el usuario autenticado.'
       description: ''
-      authenticated: false
+      authenticated: true
       deprecated: false
     headers:
+      Authorization: 'Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN'
       Content-Type: multipart/form-data
       Accept: application/json
     urlParameters: []
@@ -272,9 +289,9 @@ endpoints:
       title:
         custom: []
         name: title
-        description: 'Must not be greater than 255 characters.'
+        description: 'Título de la publicación. Must not be greater than 255 characters.'
         required: true
-        example: b
+        example: 'Mi primera publicación'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -283,9 +300,9 @@ endpoints:
       content:
         custom: []
         name: content
-        description: ''
+        description: 'Contenido de la publicación.'
         required: true
-        example: architecto
+        example: 'Contenido de ejemplo creado desde la documentación.'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -304,14 +321,17 @@ endpoints:
         nullable: false
         deprecated: false
     cleanBodyParameters:
-      title: b
-      content: architecto
+      title: 'Mi primera publicación'
+      content: 'Contenido de ejemplo creado desde la documentación.'
     fileParameters:
       images:
         - null
     responses: []
     responseFields: []
-    auth: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
     controller: null
     method: null
     route: null
@@ -326,11 +346,12 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'Eliminar una publicación propia.'
       description: ''
-      authenticated: false
+      authenticated: true
       deprecated: false
     headers:
+      Authorization: 'Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN'
       Content-Type: application/json
       Accept: application/json
     urlParameters:
@@ -354,7 +375,10 @@ endpoints:
     fileParameters: []
     responses: []
     responseFields: []
-    auth: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
     controller: null
     method: null
     route: null
@@ -369,11 +393,12 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'Crear un comentario en una publicación existente.'
       description: ''
-      authenticated: false
+      authenticated: true
       deprecated: false
     headers:
+      Authorization: 'Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN'
       Content-Type: application/json
       Accept: application/json
     urlParameters:
@@ -407,9 +432,9 @@ endpoints:
       content:
         custom: []
         name: content
-        description: ''
+        description: 'Contenido del comentario. El autor se toma del usuario autenticado.'
         required: true
-        example: architecto
+        example: 'Comentario de prueba desde la documentación.'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -417,11 +442,14 @@ endpoints:
         deprecated: false
     cleanBodyParameters:
       author: b
-      content: architecto
+      content: 'Comentario de prueba desde la documentación.'
     fileParameters: []
     responses: []
     responseFields: []
-    auth: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
     controller: null
     method: null
     route: null
@@ -436,11 +464,12 @@ endpoints:
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
-      title: ''
+      title: 'Registrar un like del usuario autenticado.'
       description: ''
-      authenticated: false
+      authenticated: true
       deprecated: false
     headers:
+      Authorization: 'Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN'
       Content-Type: application/json
       Accept: application/json
     urlParameters:
@@ -464,7 +493,10 @@ endpoints:
     fileParameters: []
     responses: []
     responseFields: []
-    auth: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
     controller: null
     method: null
     route: null

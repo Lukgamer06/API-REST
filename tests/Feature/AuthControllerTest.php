@@ -48,6 +48,17 @@ class AuthControllerTest extends TestCase
             ->assertJsonValidationErrors(['name', 'email', 'password']);
     }
 
+    public function test_register_requires_password_confirmation(): void
+    {
+        $this->postJson('/api/v1/register', [
+            'name' => 'Ada Lovelace',
+            'email' => 'ada@example.com',
+            'password' => 'password123',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['password_confirmation']);
+    }
+
     public function test_login_returns_token_for_valid_credentials(): void
     {
         User::factory()->create([

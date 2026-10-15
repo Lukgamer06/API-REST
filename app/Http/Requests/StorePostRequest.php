@@ -29,4 +29,27 @@ class StorePostRequest extends FormRequest
             'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,gif,webp', 'max:5120'],
         ];
     }
+
+    /**
+     * Describe the fields used by Scribe's interactive request form.
+     *
+     * @return array<string, array<string, string|bool>>
+     */
+    public function bodyParameters(): array
+    {
+        return [
+            'title' => [
+                'description' => 'Título de la publicación.',
+                'example' => 'Mi primera publicación',
+            ],
+            'content' => [
+                'description' => 'Contenido de la publicación.',
+                'example' => 'Contenido de ejemplo creado desde la documentación.',
+            ],
+            'images' => [
+                'description' => 'Opcional. Hasta 10 imágenes JPG, PNG, GIF o WEBP, de máximo 5 MB cada una.',
+                'required' => false,
+            ],
+        ];
+    }
 }

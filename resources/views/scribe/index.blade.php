@@ -72,31 +72,31 @@
                 </li>
                                     <ul id="tocify-subheader-endpoints" class="tocify-subheader">
                                                     <li class="tocify-item level-2" data-unique="endpoints-POSTapi-v1-register">
-                                <a href="#endpoints-POSTapi-v1-register">POST api/v1/register</a>
+                                <a href="#endpoints-POSTapi-v1-register">Registrar un usuario y obtener un token Bearer.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-v1-login">
-                                <a href="#endpoints-POSTapi-v1-login">POST api/v1/login</a>
+                                <a href="#endpoints-POSTapi-v1-login">Iniciar sesión y obtener un token Bearer.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-v1-posts">
-                                <a href="#endpoints-GETapi-v1-posts">GET api/v1/posts</a>
+                                <a href="#endpoints-GETapi-v1-posts">Listar publicaciones; opcionalmente filtrar por título o contenido.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-GETapi-v1-posts--post_id-">
-                                <a href="#endpoints-GETapi-v1-posts--post_id-">GET api/v1/posts/{post_id}</a>
+                                <a href="#endpoints-GETapi-v1-posts--post_id-">Consultar una publicación existente.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-v1-logout">
-                                <a href="#endpoints-POSTapi-v1-logout">POST api/v1/logout</a>
+                                <a href="#endpoints-POSTapi-v1-logout">Revocar el token de acceso actual.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-v1-posts">
-                                <a href="#endpoints-POSTapi-v1-posts">POST api/v1/posts</a>
+                                <a href="#endpoints-POSTapi-v1-posts">Crear una publicación para el usuario autenticado.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-DELETEapi-v1-posts--post_id-">
-                                <a href="#endpoints-DELETEapi-v1-posts--post_id-">DELETE api/v1/posts/{post_id}</a>
+                                <a href="#endpoints-DELETEapi-v1-posts--post_id-">Eliminar una publicación propia.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-v1-posts--post_id--comments">
-                                <a href="#endpoints-POSTapi-v1-posts--post_id--comments">POST api/v1/posts/{post_id}/comments</a>
+                                <a href="#endpoints-POSTapi-v1-posts--post_id--comments">Crear un comentario en una publicación existente.</a>
                             </li>
                                                                                 <li class="tocify-item level-2" data-unique="endpoints-POSTapi-v1-posts--post_id--like">
-                                <a href="#endpoints-POSTapi-v1-posts--post_id--like">POST api/v1/posts/{post_id}/like</a>
+                                <a href="#endpoints-POSTapi-v1-posts--post_id--like">Registrar un like del usuario autenticado.</a>
                             </li>
                                                                         </ul>
                             </ul>
@@ -117,22 +117,24 @@
     <div class="dark-box"></div>
     <div class="content">
         <h1 id="introduction">Introduction</h1>
+<p>API de publicaciones con autenticación Bearer.</p>
 <aside>
     <strong>Base URL</strong>: <code>http://localhost:8000</code>
 </aside>
-<pre><code>This documentation aims to provide all the information you need to work with our API.
-
-&lt;aside&gt;As you scroll, you'll see code examples for working with the API in different programming languages in the dark area to the right (or as part of the content on mobile).
-You can switch the language used with the tabs at the top right (or from the nav menu at the top left on mobile).&lt;/aside&gt;</code></pre>
+<p>Para probar los endpoints protegidos, primero ejecuta <strong>POST /api/v1/register</strong> con los ejemplos mostrados. La respuesta contiene el token de acceso. En cada endpoint protegido, selecciona <strong>Try it out</strong> y en el campo <strong>Authorization</strong> pega <code>Bearer</code> seguido del token completo (incluye el prefijo y el espacio).</p>
+<p>También puedes iniciar sesión en <strong>POST /api/v1/login</strong> con el mismo correo y contraseña usados al registrarte. Las rutas de lectura de publicaciones no requieren autenticación.</p>
+<aside>El registro requiere que `password_confirmation` sea idéntico a `password`. Para comentarios, likes y eliminación, usa un `post_id` existente obtenido de **GET /api/v1/posts**. El usuario solo puede eliminar sus propias publicaciones.</aside>
 
         <h1 id="authenticating-requests">Authenticating requests</h1>
-<p>This API is not authenticated.</p>
+<p>To authenticate requests, include an <strong><code>Authorization</code></strong> header with the value <strong><code>"Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN"</code></strong>.</p>
+<p>All authenticated endpoints are marked with a <code>requires authentication</code> badge in the documentation below.</p>
+<p>Consulta la sección Introduction para obtener un token y ver cómo escribir el valor completo en Try it out.</p>
 
         <h1 id="endpoints">Endpoints</h1>
 
     
 
-                                <h2 id="endpoints-POSTapi-v1-register">POST api/v1/register</h2>
+                                <h2 id="endpoints-POSTapi-v1-register">Registrar un usuario y obtener un token Bearer.</h2>
 
 <p>
 </p>
@@ -149,9 +151,10 @@ You can switch the language used with the tabs at the top right (or from the nav
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"name\": \"b\",
-    \"email\": \"zbailey@example.net\",
-    \"password\": \"-0pBNvYgxw\"
+    \"name\": \"Ana Postman\",
+    \"email\": \"ana.postman@example.test\",
+    \"password\": \"Password123!\",
+    \"password_confirmation\": \"Password123!\"
 }"
 </code></pre></div>
 
@@ -167,9 +170,10 @@ const headers = {
 };
 
 let body = {
-    "name": "b",
-    "email": "zbailey@example.net",
-    "password": "-0pBNvYgxw"
+    "name": "Ana Postman",
+    "email": "ana.postman@example.test",
+    "password": "Password123!",
+    "password_confirmation": "Password123!"
 };
 
 fetch(url, {
@@ -261,10 +265,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="name"                data-endpoint="POSTapi-v1-register"
-               value="b"
+               value="Ana Postman"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>b</code></p>
+<p>Nombre del usuario. Must not be greater than 255 characters. Example: <code>Ana Postman</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>email</code></b>&nbsp;&nbsp;
@@ -273,10 +277,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="email"                data-endpoint="POSTapi-v1-register"
-               value="zbailey@example.net"
+               value="ana.postman@example.test"
                data-component="body">
     <br>
-<p>Must be a valid email address. Must not be greater than 255 characters. Example: <code>zbailey@example.net</code></p>
+<p>Correo único. Usa uno distinto si ya existe. Must be a valid email address. Must not be greater than 255 characters. Example: <code>ana.postman@example.test</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>password</code></b>&nbsp;&nbsp;
@@ -285,14 +289,26 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="password"                data-endpoint="POSTapi-v1-register"
-               value="-0pBNvYgxw"
+               value="Password123!"
                data-component="body">
     <br>
-<p>Must be at least 8 characters. Example: <code>-0pBNvYgxw</code></p>
+<p>Contraseña de al menos 8 caracteres. Must be at least 8 characters. Example: <code>Password123!</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>password_confirmation</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="password_confirmation"                data-endpoint="POSTapi-v1-register"
+               value="Password123!"
+               data-component="body">
+    <br>
+<p>Debe ser idéntica a <code>password</code>. The value and <code>password</code> must match. Example: <code>Password123!</code></p>
         </div>
         </form>
 
-                    <h2 id="endpoints-POSTapi-v1-login">POST api/v1/login</h2>
+                    <h2 id="endpoints-POSTapi-v1-login">Iniciar sesión y obtener un token Bearer.</h2>
 
 <p>
 </p>
@@ -309,8 +325,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"email\": \"gbailey@example.net\",
-    \"password\": \"|]|{+-\"
+    \"email\": \"ana.postman@example.test\",
+    \"password\": \"Password123!\"
 }"
 </code></pre></div>
 
@@ -326,8 +342,8 @@ const headers = {
 };
 
 let body = {
-    "email": "gbailey@example.net",
-    "password": "|]|{+-"
+    "email": "ana.postman@example.test",
+    "password": "Password123!"
 };
 
 fetch(url, {
@@ -419,10 +435,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="email"                data-endpoint="POSTapi-v1-login"
-               value="gbailey@example.net"
+               value="ana.postman@example.test"
                data-component="body">
     <br>
-<p>Must be a valid email address. Example: <code>gbailey@example.net</code></p>
+<p>El mismo correo usado durante el registro. Must be a valid email address. Example: <code>ana.postman@example.test</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>password</code></b>&nbsp;&nbsp;
@@ -431,14 +447,14 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="password"                data-endpoint="POSTapi-v1-login"
-               value="|]|{+-"
+               value="Password123!"
                data-component="body">
     <br>
-<p>Example: <code>|]|{+-</code></p>
+<p>La misma contraseña usada durante el registro. Example: <code>Password123!</code></p>
         </div>
         </form>
 
-                    <h2 id="endpoints-GETapi-v1-posts">GET api/v1/posts</h2>
+                    <h2 id="endpoints-GETapi-v1-posts">Listar publicaciones; opcionalmente filtrar por título o contenido.</h2>
 
 <p>
 </p>
@@ -707,7 +723,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                         </form>
 
-                    <h2 id="endpoints-GETapi-v1-posts--post_id-">GET api/v1/posts/{post_id}</h2>
+                    <h2 id="endpoints-GETapi-v1-posts--post_id-">Consultar una publicación existente.</h2>
 
 <p>
 </p>
@@ -855,9 +871,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                     </form>
 
-                    <h2 id="endpoints-POSTapi-v1-logout">POST api/v1/logout</h2>
+                    <h2 id="endpoints-POSTapi-v1-logout">Revocar el token de acceso actual.</h2>
 
 <p>
+<small class="badge badge-darkred">requires authentication</small>
 </p>
 
 
@@ -869,6 +886,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
     "http://localhost:8000/api/v1/logout" \
+    --header "Authorization: Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
 
@@ -879,6 +897,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 );
 
 const headers = {
+    "Authorization": "Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN",
     "Content-Type": "application/json",
     "Accept": "application/json",
 };
@@ -910,7 +929,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 </span>
 <form id="form-POSTapi-v1-logout" data-method="POST"
       data-path="api/v1/logout"
-      data-authed="0"
+      data-authed="1"
       data-hasfiles="0"
       data-isarraybody="0"
       autocomplete="off"
@@ -941,6 +960,18 @@ You can check the Dev Tools console for debugging information.</code></pre>
         </p>
                 <h4 class="fancy-heading-panel"><b>Headers</b></h4>
                                 <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-v1-logout"
+               value="Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN</code></p>
+            </div>
+                                <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
  &nbsp;
@@ -966,9 +997,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                         </form>
 
-                    <h2 id="endpoints-POSTapi-v1-posts">POST api/v1/posts</h2>
+                    <h2 id="endpoints-POSTapi-v1-posts">Crear una publicación para el usuario autenticado.</h2>
 
 <p>
+<small class="badge badge-darkred">requires authentication</small>
 </p>
 
 
@@ -980,11 +1012,12 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
     "http://localhost:8000/api/v1/posts" \
+    --header "Authorization: Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "title=b"\
-    --form "content=architecto"\
-    --form "images[]=@/tmp/phpxjWDZD" </code></pre></div>
+    --form "title=Mi primera publicación"\
+    --form "content=Contenido de ejemplo creado desde la documentación."\
+    --form "images[]=@/tmp/phpVvofoK" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -993,13 +1026,14 @@ You can check the Dev Tools console for debugging information.</code></pre>
 );
 
 const headers = {
+    "Authorization": "Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN",
     "Content-Type": "multipart/form-data",
     "Accept": "application/json",
 };
 
 const body = new FormData();
-body.append('title', 'b');
-body.append('content', 'architecto');
+body.append('title', 'Mi primera publicación');
+body.append('content', 'Contenido de ejemplo creado desde la documentación.');
 body.append('images[]', document.querySelector('input[name="images[]"]').files[0]);
 
 fetch(url, {
@@ -1029,7 +1063,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 </span>
 <form id="form-POSTapi-v1-posts" data-method="POST"
       data-path="api/v1/posts"
-      data-authed="0"
+      data-authed="1"
       data-hasfiles="1"
       data-isarraybody="0"
       autocomplete="off"
@@ -1059,6 +1093,18 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b><code>api/v1/posts</code></b>
         </p>
                 <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-v1-posts"
+               value="Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN</code></p>
+            </div>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
@@ -1091,10 +1137,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="title"                data-endpoint="POSTapi-v1-posts"
-               value="b"
+               value="Mi primera publicación"
                data-component="body">
     <br>
-<p>Must not be greater than 255 characters. Example: <code>b</code></p>
+<p>Título de la publicación. Must not be greater than 255 characters. Example: <code>Mi primera publicación</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>content</code></b>&nbsp;&nbsp;
@@ -1103,10 +1149,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="content"                data-endpoint="POSTapi-v1-posts"
-               value="architecto"
+               value="Contenido de ejemplo creado desde la documentación."
                data-component="body">
     <br>
-<p>Example: <code>architecto</code></p>
+<p>Contenido de la publicación. Example: <code>Contenido de ejemplo creado desde la documentación.</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>images</code></b>&nbsp;&nbsp;
@@ -1124,9 +1170,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
         </div>
         </form>
 
-                    <h2 id="endpoints-DELETEapi-v1-posts--post_id-">DELETE api/v1/posts/{post_id}</h2>
+                    <h2 id="endpoints-DELETEapi-v1-posts--post_id-">Eliminar una publicación propia.</h2>
 
 <p>
+<small class="badge badge-darkred">requires authentication</small>
 </p>
 
 
@@ -1138,6 +1185,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <div class="bash-example">
     <pre><code class="language-bash">curl --request DELETE \
     "http://localhost:8000/api/v1/posts/29" \
+    --header "Authorization: Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
 
@@ -1148,6 +1196,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 );
 
 const headers = {
+    "Authorization": "Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN",
     "Content-Type": "application/json",
     "Accept": "application/json",
 };
@@ -1179,7 +1228,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 </span>
 <form id="form-DELETEapi-v1-posts--post_id-" data-method="DELETE"
       data-path="api/v1/posts/{post_id}"
-      data-authed="0"
+      data-authed="1"
       data-hasfiles="0"
       data-isarraybody="0"
       autocomplete="off"
@@ -1209,6 +1258,18 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b><code>api/v1/posts/{post_id}</code></b>
         </p>
                 <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="DELETEapi-v1-posts--post_id-"
+               value="Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN</code></p>
+            </div>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
@@ -1248,9 +1309,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                     </form>
 
-                    <h2 id="endpoints-POSTapi-v1-posts--post_id--comments">POST api/v1/posts/{post_id}/comments</h2>
+                    <h2 id="endpoints-POSTapi-v1-posts--post_id--comments">Crear un comentario en una publicación existente.</h2>
 
 <p>
+<small class="badge badge-darkred">requires authentication</small>
 </p>
 
 
@@ -1262,11 +1324,12 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
     "http://localhost:8000/api/v1/posts/29/comments" \
+    --header "Authorization: Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
     \"author\": \"b\",
-    \"content\": \"architecto\"
+    \"content\": \"Comentario de prueba desde la documentación.\"
 }"
 </code></pre></div>
 
@@ -1277,13 +1340,14 @@ You can check the Dev Tools console for debugging information.</code></pre>
 );
 
 const headers = {
+    "Authorization": "Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN",
     "Content-Type": "application/json",
     "Accept": "application/json",
 };
 
 let body = {
     "author": "b",
-    "content": "architecto"
+    "content": "Comentario de prueba desde la documentación."
 };
 
 fetch(url, {
@@ -1313,7 +1377,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 </span>
 <form id="form-POSTapi-v1-posts--post_id--comments" data-method="POST"
       data-path="api/v1/posts/{post_id}/comments"
-      data-authed="0"
+      data-authed="1"
       data-hasfiles="0"
       data-isarraybody="0"
       autocomplete="off"
@@ -1343,6 +1407,18 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b><code>api/v1/posts/{post_id}/comments</code></b>
         </p>
                 <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-v1-posts--post_id--comments"
+               value="Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN</code></p>
+            </div>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;
@@ -1400,16 +1476,17 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="content"                data-endpoint="POSTapi-v1-posts--post_id--comments"
-               value="architecto"
+               value="Comentario de prueba desde la documentación."
                data-component="body">
     <br>
-<p>Example: <code>architecto</code></p>
+<p>Contenido del comentario. El autor se toma del usuario autenticado. Example: <code>Comentario de prueba desde la documentación.</code></p>
         </div>
         </form>
 
-                    <h2 id="endpoints-POSTapi-v1-posts--post_id--like">POST api/v1/posts/{post_id}/like</h2>
+                    <h2 id="endpoints-POSTapi-v1-posts--post_id--like">Registrar un like del usuario autenticado.</h2>
 
 <p>
+<small class="badge badge-darkred">requires authentication</small>
 </p>
 
 
@@ -1421,6 +1498,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 <div class="bash-example">
     <pre><code class="language-bash">curl --request POST \
     "http://localhost:8000/api/v1/posts/29/like" \
+    --header "Authorization: Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre></div>
 
@@ -1431,6 +1509,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 );
 
 const headers = {
+    "Authorization": "Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN",
     "Content-Type": "application/json",
     "Accept": "application/json",
 };
@@ -1462,7 +1541,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
 </span>
 <form id="form-POSTapi-v1-posts--post_id--like" data-method="POST"
       data-path="api/v1/posts/{post_id}/like"
-      data-authed="0"
+      data-authed="1"
       data-hasfiles="0"
       data-isarraybody="0"
       autocomplete="off"
@@ -1492,6 +1571,18 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <b><code>api/v1/posts/{post_id}/like</code></b>
         </p>
                 <h4 class="fancy-heading-panel"><b>Headers</b></h4>
+                                <div style="padding-left: 28px; clear: unset;">
+                <b style="line-height: 2;"><code>Authorization</code></b>&nbsp;&nbsp;
+&nbsp;
+ &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="Authorization" class="auth-value"               data-endpoint="POSTapi-v1-posts--post_id--like"
+               value="Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN"
+               data-component="header">
+    <br>
+<p>Example: <code>Bearer TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN</code></p>
+            </div>
                                 <div style="padding-left: 28px; clear: unset;">
                 <b style="line-height: 2;"><code>Content-Type</code></b>&nbsp;&nbsp;
 &nbsp;

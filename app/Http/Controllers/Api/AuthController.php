@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    /**
+     * Registrar un usuario y obtener un token Bearer.
+     */
     public function register(RegisterRequest $request): JsonResponse
     {
         $user = User::create($request->validated());
@@ -24,6 +27,9 @@ class AuthController extends Controller
         ], 201);
     }
 
+    /**
+     * Iniciar sesión y obtener un token Bearer.
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         $user = User::where('email', $request->validated('email'))->first();
@@ -41,6 +47,11 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Revocar el token de acceso actual.
+     *
+     * @authenticated
+     */
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();

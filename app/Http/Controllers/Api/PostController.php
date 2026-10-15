@@ -16,6 +16,9 @@ use Throwable;
 
 class PostController extends Controller
 {
+    /**
+     * Listar publicaciones; opcionalmente filtrar por título o contenido.
+     */
     public function index(Request $request): JsonResponse
     {
         $search = trim((string) $request->query('search', ''));
@@ -34,6 +37,11 @@ class PostController extends Controller
         return response()->json($posts);
     }
 
+    /**
+     * Crear una publicación para el usuario autenticado.
+     *
+     * @authenticated
+     */
     public function store(StorePostRequest $request): JsonResponse
     {
         $data = $request->validated();
@@ -73,11 +81,19 @@ class PostController extends Controller
         return response()->json($post->refresh()->load(['images', 'comments']), 201);
     }
 
+    /**
+     * Consultar una publicación existente.
+     */
     public function show(Post $post): JsonResponse
     {
         return response()->json($post->load(['images', 'comments']));
     }
 
+    /**
+     * Registrar un like del usuario autenticado.
+     *
+     * @authenticated
+     */
     public function like(Request $request, Post $post): JsonResponse
     {
         $user = $request->user();
@@ -98,6 +114,11 @@ class PostController extends Controller
         ]);
     }
 
+    /**
+     * Eliminar una publicación propia.
+     *
+     * @authenticated
+     */
     public function destroy(Request $request, Post $post): Response
     {
         abort_unless($request->user()->is($post->user), 403);

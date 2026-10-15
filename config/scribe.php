@@ -14,14 +14,15 @@ return [
     'title' => config('app.name').' API Documentation',
 
     // A short description of your API. Will be included in the docs webpage, Postman collection and OpenAPI spec.
-    'description' => '',
+    'description' => 'API de publicaciones con autenticación Bearer.',
 
     // Text to place in the "Introduction" section, right after the `description`. Markdown and HTML are supported.
     'intro_text' => <<<'INTRO'
-            This documentation aims to provide all the information you need to work with our API.
+        Para probar los endpoints protegidos, primero ejecuta **POST /api/v1/register** con los ejemplos mostrados. La respuesta contiene el token de acceso. En cada endpoint protegido, selecciona **Try it out** y en el campo **Authorization** pega `Bearer ` seguido del token completo (incluye el prefijo y el espacio).
 
-            <aside>As you scroll, you'll see code examples for working with the API in different programming languages in the dark area to the right (or as part of the content on mobile).
-            You can switch the language used with the tabs at the top right (or from the nav menu at the top left on mobile).</aside>
+        También puedes iniciar sesión en **POST /api/v1/login** con el mismo correo y contraseña usados al registrarte. Las rutas de lectura de publicaciones no requieren autenticación.
+
+        <aside>El registro requiere que `password_confirmation` sea idéntico a `password`. Para comentarios, likes y eliminación, usa un `post_id` existente obtenido de **GET /api/v1/posts**. El usuario solo puede eliminar sus propias publicaciones.</aside>
         INTRO,
 
     // The base URL displayed in the docs.
@@ -105,7 +106,7 @@ return [
     // How is your API authenticated? This information will be used in the displayed docs, generated examples and response calls.
     'auth' => [
         // Set this to true if ANY endpoints in your API use authentication.
-        'enabled' => false,
+        'enabled' => true,
 
         // Set this to true if your API should be authenticated by default. If so, you must also set `enabled` (above) to true.
         // You can then use @unauthenticated or @authenticated on individual endpoints to change their status from the default.
@@ -115,7 +116,7 @@ return [
         'in' => AuthIn::BEARER->value,
 
         // The name of the auth parameter (e.g. token, key, apiKey) or header (e.g. Authorization, Api-Key).
-        'name' => 'key',
+        'name' => 'token',
 
         // The value of the parameter to be used by Scribe to authenticate response calls.
         // This will NOT be included in the generated documentation. If empty, Scribe will use a random value.
@@ -123,10 +124,10 @@ return [
 
         // Placeholder your users will see for the auth parameter in the example requests.
         // Set this to null if you want Scribe to use a random value as placeholder instead.
-        'placeholder' => '{YOUR_AUTH_KEY}',
+        'placeholder' => 'TOKEN_DEVUELTO_POR_REGISTER_O_LOGIN',
 
         // Any extra authentication-related info for your users. Markdown and HTML are supported.
-        'extra_info' => 'You can retrieve your token by visiting your dashboard and clicking <b>Generate API token</b>.',
+        'extra_info' => 'Consulta la sección Introduction para obtener un token y ver cómo escribir el valor completo en Try it out.',
     ],
 
     // Example requests for each endpoint will be shown in each of these languages.

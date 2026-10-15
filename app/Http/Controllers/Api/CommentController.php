@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Mail;
 
 class CommentController extends Controller
 {
+    /**
+     * Crear un comentario en una publicación existente.
+     *
+     * @authenticated
+     */
     public function store(StoreCommentRequest $request, Post $post): JsonResponse
     {
         $comment = new Comment([
